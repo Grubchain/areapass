@@ -23,6 +23,8 @@ jobs:
       PROCESS_TYPE: web
       DOCKERFILE: backend/Dockerfile
       CONTEXT: backend
+      RELEASE_DOCKERFILE: backend/Dockerfile.release
+      RELEASE_PROCESS_TYPE: release
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +36,7 @@ jobs:
       - name: Login to Heroku Container Registry
         run: echo "${{ secrets.HEROKU_API_KEY }}" | docker login --username=${HEROKU_EMAIL} --password-stdin $HEROKU_REGISTRY
 
-      - name: Build & Push Image
+      - name: Build & Push WEB Image
         uses: docker/build-push-action@v6
         with:
           context: ./${{ env.CONTEXT }}
@@ -47,7 +49,7 @@ jobs:
           provenance: false
           sbom: false
 
-      - name: Release on Heroku
+      - name: Release WEB on Heroku
         run: heroku container:release $PROCESS_TYPE -a $HEROKU_APP
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}

@@ -1,0 +1,9 @@
+# You can reuse your base and copy only what release needs
+FROM registry.heroku.com/areapass-api/web
+
+COPY release-entrypoint.sh /usr/local/bin/release-entrypoint.sh
+RUN chmod +x /usr/local/bin/release-entrypoint.sh
+
+COPY . .
+# whatever your app needs: composer install / yarn --production etc.
+ENTRYPOINT ["/etc/local/bin/release-entrypoint.sh"]
