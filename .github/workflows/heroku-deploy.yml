@@ -1,0 +1,47 @@
+name: Deploy to Heroku (container)
+on:
+  push:
+    branches:
+      - backend
+      - frontend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - app_name: areapass-api
+            process: web
+            dockerfile: backend/Dockerfile
+          - app_name: areapass
+            process: web
+            dockerfile: frontend/Dockerfile.csr
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Heroku login
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+          heroku container:login
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+      - name: Build image
+        run: |
+          docker build \
+            -f ${{ matrix.dockerfile }} \
+            -t registry.heroku.com/${{ matrix.app_name }}/${{ matrix.process }} \
+            .
+
+      - name: Push image
+        run: |
+          docker push registry.heroku.com/${{ matrix.app_name }}/${{ matrix.process }}
+
+      - name: Release
+        run: |
+          heroku container:release ${{ matrix.process }} -a ${{ matrix.app_name }}
+
