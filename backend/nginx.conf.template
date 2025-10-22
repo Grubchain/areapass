@@ -12,6 +12,7 @@ http {
     default                       "";
     "https://areapass.xyz"        "https://areapass.xyz";
     "https://www.areapass.xyz"    "https://www.areapass.xyz";
+    "https://staging.areapass.xyz"    "https://staging.areapass.xyz";
   }
 
   server {
