@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN apk add --no-cache yarn
 
-COPY ./frontend/package.json ./frontend/yarn.lock ./
+COPY package.json yarn.lock ./
 
 RUN yarn install
 
