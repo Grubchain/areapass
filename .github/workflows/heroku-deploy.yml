@@ -12,9 +12,11 @@ jobs:
       matrix:
         include:
           - app_name: areapass-api
+            context: backend
             process: web
             dockerfile: backend/Dockerfile
           - app_name: areapass
+            context: frontend
             process: web
             dockerfile: frontend/Dockerfile.csr
     steps:
@@ -30,16 +32,15 @@ jobs:
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 
-      - name: Build image
-        run: |
-          docker build \
-            -f ${{ matrix.dockerfile }} \
-            -t registry.heroku.com/${{ matrix.app_name }}/${{ matrix.process }} \
-            .
-
-      - name: Push image
-        run: |
-          docker push registry.heroku.com/${{ matrix.app_name }}/${{ matrix.process }}
+      - name: Build & push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.context }}                 # 👈 per-service context
+          file: ./${{ matrix.dockerfile }}
+          push: true
+          tags: registry.heroku.com/${{ matrix.app_name }}/${{ matrix.process }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Release
         run: |
