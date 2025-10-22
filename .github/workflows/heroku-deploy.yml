@@ -59,7 +59,7 @@ jobs:
     env:
       HEROKU_APP: areapass
       PROCESS_TYPE: web
-      DOCKERFILE: frontend/Dockerfile.csr
+      DOCKERFILE: frontend/Dockerfile.ssr
       CONTEXT: frontend
     steps:
       - uses: actions/checkout@v4
