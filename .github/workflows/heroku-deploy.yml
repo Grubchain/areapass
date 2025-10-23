@@ -23,8 +23,6 @@ jobs:
       PROCESS_TYPE: web
       DOCKERFILE: backend/Dockerfile
       CONTEXT: backend
-      RELEASE_DOCKERFILE: backend/Dockerfile.release
-      RELEASE_PROCESS_TYPE: release
     steps:
       - uses: actions/checkout@v4
 

@@ -46,4 +46,4 @@ EXPOSE 8080
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["php-fpm"]

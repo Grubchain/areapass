@@ -17,7 +17,5 @@ envsubst '$SERVER_PORT' < "/etc/nginx/templates/port.conf.template" > "/etc/ngin
 cp /etc/nginx/templates/nginx.conf.template /etc/nginx/nginx.conf
 
 # Start php-fpm in foreground (better logs), backgrounded so nginx can start
-php-fpm -D
-
-# Keep dyno alive with nginx in foreground
+php-fpm -F &
 exec nginx -g 'daemon off;'
