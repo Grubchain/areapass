@@ -7,3 +7,5 @@ RUN chmod +x /usr/local/bin/release-entrypoint.sh
 COPY . .
 # whatever your app needs: composer install / yarn --production etc.
 ENTRYPOINT ["/etc/local/bin/release-entrypoint.sh"]
+
+CMD []
