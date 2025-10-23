@@ -44,6 +44,4 @@ RUN mkdir -p /var/www/html/vendor/ezyang/htmlpurifier/library/HTMLPurifier/Defin
 
 EXPOSE 8080
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-
-CMD ["php-fpm"]
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
