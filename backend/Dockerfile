@@ -11,8 +11,7 @@ RUN echo "" >> /usr/local/etc/php-fpm.d/docker-php-serversideup-pool.conf && \
 
 RUN install-php-extensions intl
 
-RUN apk add --no-cache gettext
-RUN apk add --no-cache bash
+RUN apk add --no-cache gettext supervisor bash
 
 COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
 COPY port.conf.template /etc/nginx/templates/port.conf.template
