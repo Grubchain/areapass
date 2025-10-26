@@ -1,6 +1,10 @@
 # You can reuse your base and copy only what release needs
 FROM registry.heroku.com/areapass-api/web
 
+RUN apk add --no-cache gettext supervisor bash autossh postgresql-client
+
+COPY release-supervisord.conf /etc/release-supervisord.conf
+
 COPY release-entrypoint.sh /usr/local/bin/release-entrypoint.sh
 RUN chmod +x /usr/local/bin/release-entrypoint.sh
 
