@@ -21,7 +21,7 @@ jobs:
     env:
       HEROKU_APP: areapass-api
       PROCESS_TYPE: web
-      DOCKERFILE: backend/Dockerfile
+      DOCKERFILE: backend/Dockerfile.web
       CONTEXT: backend
     steps:
       - uses: actions/checkout@v4
