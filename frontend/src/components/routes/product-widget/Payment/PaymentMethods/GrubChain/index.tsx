@@ -8,6 +8,7 @@ import { t } from "@lingui/macro";
 import { eventHomepagePath } from "../../../../../../utilites/urlHelper.ts";
 import GrubchainCheckoutForm from "../../../../../forms/GrubChainCheckoutForm"
 import { Event } from "../../../../../../types.ts";
+import { useGetOrderPublic } from "../../../../../../queries/useGetOrderPublic.ts";
 
 interface GrubChainPaymentMethodProps {
   enabled: boolean;
@@ -16,6 +17,7 @@ interface GrubChainPaymentMethodProps {
 
 export const GrubChainPaymentMethod = ({ enabled, setSubmitHandler }: GrubChainPaymentMethodProps) => {
   const { eventId, orderShortId } = useParams();
+  const { orderData: order, isFetched: isOrderFetched } = useGetOrderPublic(eventId, orderShortId, ['event']);
   const {
     data: grubchainData,
     isFetched: isGrubchainFetched,
