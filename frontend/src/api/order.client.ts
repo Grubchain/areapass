@@ -1,4 +1,4 @@
-import { publicApi, grubchainApi } from "./public-client.ts";
+import { publicApi } from "./public-client.ts";
 import {
   GenericDataResponse,
   GenericPaginatedResponse,
@@ -9,6 +9,7 @@ import {
 } from "../types.ts";
 import { api } from "./client.ts";
 import { queryParamsHelper } from "../utilites/queryParamsHelper.ts";
+import { gTokenizerApi } from "./grubchainTokenizerApiClient.ts"
 
 export interface OrderDetails {
   first_name: string;
@@ -60,7 +61,7 @@ export const orderClient = {
   all: async (eventId: IdParam, pagination: QueryFilters) => {
     const response = await api.get<GenericPaginatedResponse<Order>>(
       `events/${eventId}/orders` +
-        queryParamsHelper.buildQueryString(pagination),
+      queryParamsHelper.buildQueryString(pagination),
     );
     return response.data;
   },
@@ -195,10 +196,20 @@ export const orderClientPublic = {
     eventId: number,
     orderShortId: string,
   ) => {
-    const response = await grubchainApi.post<{
-    client_secret: string;
-    account_id?: string;
-    }>(`events/${eventId}/order/${orderShortId}/grubchain/payment_intent`);
+    /* 
+    load tokenizer here
+    */
+    const response = gTokenizerApi.post('vault/tokenize');
+    // const response = {
+    //   data: {
+    //     data: {
+    //       client_secret: "",
+    //       business_id: "",
+    //       eventId,
+    //       orderShortId,
+    //     },
+    //   },
+    // };
     return response.data;
   },
 

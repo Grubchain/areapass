@@ -13,6 +13,7 @@ import { eventCheckoutPath, eventHomepagePath, eventHomepageUrl } from "../../..
 import { Event } from "../../../types.ts";
 import "./GrubchainCheckoutForm.module.scss"
 import { Button } from "../../common/Button/index.tsx";
+import { gapi } from "../../../api/grubchainApiClient.tsx";
 
 export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   setSubmitHandler: (submitHandler: () => () => Promise<void>) => void
@@ -24,7 +25,16 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [checkoutState, setCheckoutState] = useState("");
   const [ussdCode, setUssdCode] = useState(0);
-  const allPaymentMethods = ["card", "transfer", "USSD"];
+
+  const [transferBankName, setTransferBankName] = useState("");
+  const [transferBankAcc, setTransferBankAcc] = useState("");
+  const [transferBankAmount, setTransferBankAmount] = useState("");
+
+  const [cardNum, setCardNum] = useState("");
+  const [cardExp, setCardExp] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+
+  const allPaymentMethods = ["card", "transfer", "USSD"];//"bank",
 
   const handleSubmit = async () => {
 
@@ -38,12 +48,21 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
     setCheckoutState("");
   }
 
+  const payCard = async () => {
+    try {
+      const response = await gapi.post('vault/charge', {
+        card_number: cardNum,
+        expiry_year:parseInt(cardExp.slice(0, 2), 10),
+        expiry_month:parseInt(cardExp.slice(2), 10)
+      });
+    } catch (error) {
+    }
+  }
 
   useEffect(() => {
     if (setSubmitHandler) {
       setSubmitHandler(() => handleSubmit);
     }
-
   }, [setSubmitHandler]);
 
   if (!isOrderFetched || !order?.payment_status) {
@@ -98,6 +117,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       <Alert mb={20} color={'red'}>{t`Your payment was unsuccessful. Please try again.`}</Alert>
     )
   }
+
   if (checkoutState === '') {
     return (
       <div className="checkout-container">
@@ -156,7 +176,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             <Group spacing="lg" m="10px" justify="space-between">
               <Button
                 size="md"
-                onClick={eventHomepageUrl(event)}
+                onClick={() => { eventHomepageUrl(event) }}
                 variant="outline"
                 className={"cancel"}>
                 {t`Cancel`}
@@ -186,26 +206,35 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <Stack>
           <LoadingMask />
           <Card>
+            <TextInput
+              withAsterisk
+              value={cardNum}
+              maxLength={16}
+              label={t`Card Number`}
+              placeholder={t`Card Number`}
+              keyboardType="number-pad"
+              onChange={(e) => setCardNum(e.currentTarget.value.replace(/[^0-9]/g, ''))}
+            />
             <InputGroup>
               <TextInput
                 withAsterisk
-                label={t`Card Number`}
-                placeholder={t`Card Number`}
-
+                label={t`Expiry Date`}
+                placeholder={t`MMYY`}
+                value={cardExp}
+                maxLength={4}
+                keyboardType="number-pad"
+                onChange={(e) => setCardExp(e.currentTarget.value.replace(/[^0-9]/g, ''))}
               />
               <TextInput
                 withAsterisk
-                label={t`Expiry Date`}
-                placeholder={t`Expiry Date`}
+                label={t`CVV`}
+                placeholder={t`123`}
+                maxLength={3}
+                keyboardType="number-pad"
+                value={cardCvv}
+                onChange={(e) => setCardCvv(e.currentTarget.value.replace(/[^0-9]/g, ''))}
               />
             </InputGroup>
-
-            <TextInput
-              withAsterisk
-              label={t`CVV`}
-              placeholder={t`CVV`}
-            />
-
           </Card>
           <Group spacing="lg" m="10px" justify="space-between">
             <Button
@@ -219,13 +248,53 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={setTheCheckoutState}
+              onClick={() => { setCheckoutState("cardConfirm"); }}
               className={"checkout"}>
               {t`Next`}
             </Button>
           </Group>
         </Stack>
+      </form >
+    );
+  }
 
+  if (checkoutState === 'cardConfirm') {
+    return (
+      <form id="payment-form">
+        <h2>
+          {t`Payment`}
+        </h2>
+        <Stack>
+          <LoadingMask />
+          <Card>
+            <h3>Confirm card details</h3>
+            <h4>Card</h4>
+            <Text>{cardNum}</Text>
+            <InputGroup>
+              <h4>Expiry Date</h4>
+              <Text>{cardExp}</Text>
+              <h4>CVV</h4>
+              <Text>{cardCvv}</Text>
+            </InputGroup>
+          </Card>
+          <Group spacing="lg" m="10px" justify="space-between">
+            <Button
+              size="md"
+              onClick={() => { setCheckoutState("card"); }}
+              variant="outline"
+              className={"cancel"}>
+              {t`Cancel`}
+            </Button>
+            <Button
+              size="md"
+              color="#0e0cff"
+              variant="filled"
+              onClick={payCard}
+              className={"checkout"}>
+              {t`Checkout`}
+            </Button>
+          </Group>
+        </Stack>
       </form >
     );
   }
@@ -234,23 +303,24 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
     return (
       <form id="payment-form">
         <h2>
-          {t`Payment`}
+          {t`Payment by Transfer`}
         </h2>
 
         <LoadingMask />
         <Card>
           <InputGroup>
-            <TextInput
-              withAsterisk
-              label={t`Account Number`}
-              placeholder={t`Account Number`}
-
-            />
-            <TextInput
-              withAsterisk
-              label={t`Expiry Date`}
-              placeholder={t`Expiry Date`}
-            />
+            <h4>Bank Name</h4>
+            <Text>
+              {transferBankName}
+            </Text>
+            <h4>Account Number</h4>
+            <Text>
+              {transferBankAcc}
+            </Text>
+            <h4>Amount</h4>
+            <Text>
+              {transferBankAmount}
+            </Text>
           </InputGroup>
         </Card>
         <Group spacing="lg" m="10px" justify="space-between">
@@ -267,7 +337,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             variant="filled"
             onClick={setTheCheckoutState}
             className={"checkout"}>
-            {t`Next`}
+            {t`I have sent the money`}
           </Button>
         </Group>
       </form >
@@ -286,22 +356,28 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           <InputGroup>
             <TextInput
               withAsterisk
-              label={t`Card Number`}
-              placeholder={t`Card Number`}
-
-            />
-            <TextInput
-              withAsterisk
-              label={t`Expiry Date`}
-              placeholder={t`Expiry Date`}
+              label={t`Account Number`}
+              placeholder={t`Account Number`}
             />
           </InputGroup>
 
-          <TextInput
-            withAsterisk
-            label={t`CVV`}
-            placeholder={t`CVV`}
-          />
+          <Group spacing="lg" m="10px" justify="space-between">
+            <Button
+              size="md"
+              onClick={resetTheCheckoutState}
+              variant="outline"
+              className={"cancel"}>
+              {t`Cancel`}
+            </Button>
+            <Button
+              size="md"
+              color="#0e0cff"
+              variant="filled"
+              onClick={setTheCheckoutState}
+              className={"checkout"}>
+              {t`Next`}
+            </Button>
+          </Group>
 
         </Card>
       </form >
