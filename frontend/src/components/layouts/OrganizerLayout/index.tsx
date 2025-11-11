@@ -162,22 +162,22 @@ const OrganizerLayout = () => {
         },
     ];
 
-    if (account && !account?.stripe_connect_setup_complete) {
-        callouts.unshift({
-            icon: <IconBrandStripe size={20}/>,
-            heading: t`Connect Stripe`,
-            description: t`Connect your Stripe account to accept payments for tickets and products.`,
-            storageKey: `stripe-callout-dismissed`,
-            customButton:
-                <StripeConnectButton
-                    fullWidth
-                    variant="white"
-                    buttonIcon={<IconCreditCard size={16}/>}
-                    buttonText={t`Connect Stripe`}
-                    className={classes.calloutButton}
-                />
-        });
-    }
+    // if (account && !account?.stripe_connect_setup_complete) {
+    //     callouts.unshift({
+    //         icon: <IconBrandStripe size={20}/>,
+    //         heading: t`Connect Stripe`,
+    //         description: t`Connect your Stripe account to accept payments for tickets and products.`,
+    //         storageKey: `stripe-callout-dismissed`,
+    //         customButton:
+    //             <StripeConnectButton
+    //                 fullWidth
+    //                 variant="white"
+    //                 buttonIcon={<IconCreditCard size={16}/>}
+    //                 buttonText={t`Connect Stripe`}
+    //                 className={classes.calloutButton}
+    //             />
+    //     });
+    // }
 
     return (
         <>

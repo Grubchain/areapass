@@ -52,12 +52,12 @@ export const StatBoxes = () => {
             icon: <IconUsers size={18}/>,
             backgroundColor: '#E6677E' // Rose pink
         },
-        {
-            number: formatCurrency(eventStats?.total_refunded as number || 0, event?.currency),
-            description: t`Refunded`,
-            icon: <IconCreditCardRefund size={18}/>,
-            backgroundColor: '#49A6B7' // Teal
-        },
+        // {
+        //     number: formatCurrency(eventStats?.total_refunded as number || 0, event?.currency),
+        //     description: t`Refunded`,
+        //     icon: <IconCreditCardRefund size={18}/>,
+        //     backgroundColor: '#49A6B7' // Teal
+        // },
         {
             number: formatCurrency(eventStats?.total_gross_sales || 0, event?.currency),
             description: t`Gross sales`,

@@ -243,7 +243,7 @@ export const EventDashboard = () => {
                         areaChartProps={{syncId: 'events'}}
                     />
                 </Card>
-
+{/* 
                 <Card className={classes.chartCard}>
                     <div className={classes.chartCardTitle}>
                         <h2>{t`Revenue`}</h2>
@@ -279,7 +279,7 @@ export const EventDashboard = () => {
                         tickLine="none"
                         areaChartProps={{syncId: 'events'}}
                     />
-                </Card>
+                </Card> */}
             </>)}
         </PageBody>
     )
