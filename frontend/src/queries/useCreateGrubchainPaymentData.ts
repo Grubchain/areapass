@@ -4,13 +4,13 @@ import { IdParam } from "../types.ts";
 import { getSessionIdentifier } from "../utilites/sessionIdentifier.ts";
 
 export const useCreateGrubchainPaymentData = async (
-  eventId: IdParam,
-  orderShortId: IdParam,
+    eventId: IdParam,
+    orderShortId: IdParam,
 ) => {
-  const { data } = await orderClientPublic.createGrubchainPaymentIntent(
-    Number(eventId),
-    String(orderShortId),
-  );
-  console.log(data);
-  return { data, isFetched: true, error: {} };
+    const { data } = await orderClientPublic.createGrubchainPaymentIntent(
+        Number(eventId),
+        String(orderShortId),
+    );
+    console.log(data);
+    return { data, isFetched: true, error: {} };
 };

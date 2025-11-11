@@ -6,9 +6,10 @@ import { CheckoutContent } from "../../../../../layouts/Checkout/CheckoutContent
 import { HomepageInfoMessage } from "../../../../../common/HomepageInfoMessage";
 import { t } from "@lingui/macro";
 import { eventHomepagePath } from "../../../../../../utilites/urlHelper.ts";
+import { LoadingMask } from "../../../../../common/LoadingMask";
 import GrubchainCheckoutForm from "../../../../../forms/GrubChainCheckoutForm"
 import { Event } from "../../../../../../types.ts";
-import { useGetOrderPublic } from "../../../../../../queries/useGetOrderPublic.ts";
+
 
 interface GrubChainPaymentMethodProps {
   enabled: boolean;
@@ -17,19 +18,16 @@ interface GrubChainPaymentMethodProps {
 
 export const GrubChainPaymentMethod = ({ enabled, setSubmitHandler }: GrubChainPaymentMethodProps) => {
   const { eventId, orderShortId } = useParams();
-  const { orderData: order, isFetched: isOrderFetched } = useGetOrderPublic(eventId, orderShortId, ['event']);
   const {
     data: grubchainData,
     isFetched: isGrubchainFetched,
     error: grubchainPaymentIntentError
   } = useCreateGrubchainPaymentData(eventId, orderShortId);
+
   const { data: event } = useGetEventPublic(eventId);
 
   useEffect(() => {
-    const grubchainAccount = grubchainData?.business_id;
-    const options = grubchainAccount ? {
-      grubchainAccount: grubchainAccount
-    } : {};
+    console.log(grubchainData, "Grub Data", "isFetched: ", isGrubchainFetched, "error: ", grubchainPaymentIntentError)
 
   }, [grubchainData]);
 

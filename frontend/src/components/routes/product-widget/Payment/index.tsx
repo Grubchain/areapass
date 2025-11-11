@@ -16,6 +16,7 @@ import {
 } from "../../../../mutations/useTransitionOrderToOfflinePaymentPublic.ts";
 import { Card } from "../../../common/Card";
 import { showError } from "../../../../utilites/notifications.tsx";
+import { PoweredByGrubchainFooter } from "../../../common/PoweredByGrubchainFooter /index.tsx";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -91,31 +92,48 @@ const Payment = () => {
         {isGrubchainEnabled && (
           <div style={{ display: activePaymentMethod === 'GRUBCHAIN' ? 'block' : 'none' }}>
             <GrubChainPaymentMethod enabled={true} setSubmitHandler={setSubmitHandler} />
+            <PoweredByGrubchainFooter
+              className={{
+                root: {
+                  color: 'var(--homepage-primary-text-color)',
+                  a: {
+                    color: 'inherit',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  },
+                },
+              }}
+            />
           </div>
+
         )}
 
 
       </CheckoutContent>
-
-      <CheckoutFooter
-        event={event as Event}
-        order={order as Order}
-        isLoading={isLoading || isPaymentLoading}
-        onClick={handleSubmit}
-        buttonContent={order?.is_payment_required ? (
-          <Group gap={'10px'}>
-            <div style={{ fontWeight: "bold" }}>
-              {t`Place Order`}
-            </div>
-            <div style={{ fontSize: 14 }}>
-              {formatCurrency(order.total_gross, order.currency)}
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 500 }}>
-              {order.currency}
-            </div>
-          </Group>
-        ) : t`Complete Payment`}
-      />
+      {!isGrubchainEnabled &&
+        <CheckoutFooter
+          event={event as Event}
+          order={order as Order}
+          isLoading={isLoading || isPaymentLoading}
+          onClick={handleSubmit}
+          buttonContent={order?.is_payment_required ? (
+            <Group gap={'10px'}>
+              <div style={{ fontWeight: "bold" }}>
+                {t`Place Order`}
+              </div>
+              <div style={{ fontSize: 14 }}>
+                {formatCurrency(order.total_gross, order.currency)}
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 500 }}>
+                {order.currency}
+              </div>
+            </Group>
+          ) : t`Complete Payment`}
+        />
+      }
     </>
   );
 }

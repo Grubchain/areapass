@@ -22,8 +22,14 @@ export const clientBuildEnv: { [K in ConfigKeys]: string } = {
   VITE_DEFAULT_IMAGE_URL: import.meta.env.VITE_DEFAULT_IMAGE_URL,
   VITE_API_URL_SERVER: import.meta.env.VITE_API_URL_SERVER,
   VITE_API_URL_CLIENT: import.meta.env.VITE_API_URL_CLIENT,
+  GRUBCHAIN_URL: import.meta.env.GRUBCHAIN_URL,
+  GRUBCHAIN_TOKENIZER_URL: import.meta.env.GRUBCHAIN_TOKENIZER_URL,
   GRUBCHAIN_APP_KEY: import.meta.env.GRUBCHAIN_APP_KEY,
   GRUBCHAIN_SECRET_KEY: import.meta.env.GRUBCHAIN_SECRET_KEY,
+  GRUBCHAIN_ISS: import.meta.env.GRUBCHAIN_ISS,
+  GRUBCHAIN_KID: import.meta.env.GRUBCHAIN_KID,
+  GRUBCHAIN_AUD: import.meta.env.GRUBCHAIN_AUD,
+  GRUBCHAIN_SCOPE: import.meta.env.GRUBCHAIN_SCOPE
 };
 
 export const getConfig = (
