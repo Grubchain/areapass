@@ -13,6 +13,7 @@ concurrency:
 env:
   HEROKU_EMAIL: _        # underscore for container registry login
   HEROKU_REGISTRY: registry.heroku.com
+  HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 
 jobs:
   deploy-api:
