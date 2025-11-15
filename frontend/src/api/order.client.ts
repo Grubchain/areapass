@@ -9,7 +9,6 @@ import {
 } from "../types.ts";
 import { api } from "./client.ts";
 import { queryParamsHelper } from "../utilites/queryParamsHelper.ts";
-import { gTokenizerApi } from "./grubchainTokenizerApiClient.ts"
 
 export interface OrderDetails {
   first_name: string;
@@ -192,25 +191,29 @@ export const orderClientPublic = {
     return response.data;
   },
 
+  getGrubchainJwtToken: async (eventId: number, orderShortId: string) => {
+    const response = await publicApi.get<{
+      client_secret: string;
+      account_id?: string;
+    }>(`events/${eventId}/order/${orderShortId}/grubchain/jwt`);
+
+    return response.data&&response.data.jwt_token ? response.data.jwt_token : null;
+  },
+
   createGrubchainPaymentIntent: async (
     eventId: number,
     orderShortId: string,
   ) => {
-    /* 
-    load tokenizer here
-    */
-    const response = gTokenizerApi.post('vault/tokenize');
-    // const response = {
-    //   data: {
-    //     data: {
-    //       client_secret: "",
-    //       business_id: "",
-    //       eventId,
-    //       orderShortId,
-    //     },
-    //   },
-    // };
-    return response.data;
+    const jwtToken = orderClientPublic.getGrubchainJwtToken(eventId, orderShortId);
+    return {
+      data: {
+        client_secret: "",
+        business_id: "",
+        jwtToken: jwtToken,
+        eventId,
+        orderShortId,
+      }
+    };
   },
 
   finaliseOrder: async (
