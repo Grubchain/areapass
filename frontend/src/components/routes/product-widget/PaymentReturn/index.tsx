@@ -8,6 +8,7 @@ import {CheckoutContent} from "../../../layouts/Checkout/CheckoutContent";
 import {eventCheckoutPath} from "../../../../utilites/urlHelper.ts";
 import {HomepageInfoMessage} from "../../../common/HomepageInfoMessage";
 import {isSsr} from "../../../../utilites/helpers.ts";
+import { useGetOrderGrubchainPaymentIntentPublic } from "../../../../queries/useGetOrderGrubchainPaymentIntentPublic.ts";
 
 /**
  * This component is responsible for handling the return from the payment provider.
@@ -22,7 +23,7 @@ export const PaymentReturn = () => {
     const {data: order} = usePollGetOrderPublic(eventId, orderShortId, shouldPoll, ['event']);
     const navigate = useNavigate();
     const [attemptManualConfirmation, setAttemptManualConfirmation] = useState(false);
-    const paymentIntentQuery = useGetOrderStripePaymentIntentPublic(eventId, orderShortId, attemptManualConfirmation);
+    const paymentIntentQuery = useGetOrderGrubchainPaymentIntentPublic(eventId, orderShortId, attemptManualConfirmation);
     const [cannotConfirmPayment, setCannotConfirmPayment] = useState(false);
 
     useEffect(

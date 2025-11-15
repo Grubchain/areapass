@@ -197,23 +197,25 @@ export const orderClientPublic = {
       account_id?: string;
     }>(`events/${eventId}/order/${orderShortId}/grubchain/jwt`);
 
-    return response.data&&response.data.jwt_token ? response.data.jwt_token : null;
+    return response.data && response.data.jwt_token ? response.data.jwt_token : null;
   },
-
+  findOrderGrubchainPaymentIntent: async (
+    eventId: number,
+    orderShortId: string,
+  ) => {
+    return await publicApi.get<StripePaymentIntent>(
+      `events/${eventId}/order/${orderShortId}/grubchain/payment_intent`,
+    );
+  },
   createGrubchainPaymentIntent: async (
     eventId: number,
     orderShortId: string,
   ) => {
-    const jwtToken = orderClientPublic.getGrubchainJwtToken(eventId, orderShortId);
-    return {
-      data: {
-        client_secret: "",
-        business_id: "",
-        jwtToken: jwtToken,
-        eventId,
-        orderShortId,
-      }
-    };
+    const response = await publicApi.post<{
+      client_secret: string;
+      account_id?: string;
+    }>(`events/${eventId}/order/${orderShortId}/grubchain/payment_intent`);
+    return response.data;
   },
 
   finaliseOrder: async (
