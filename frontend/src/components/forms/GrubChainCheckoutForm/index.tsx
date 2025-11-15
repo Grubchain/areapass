@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { InputGroup } from "../../common/InputGroup";
-import { TextInput, Stack } from "@mantine/core";
 import { t } from "@lingui/macro";
-import { Alert, Skeleton, Radio, Text, Checkbox, Group } from "@mantine/core";
+import { Alert, Skeleton, Radio, Text, Checkbox, Group, TextInput, Stack } from "@mantine/core";
 import { LoadingMask } from "../../common/LoadingMask";
 import { useGetOrderPublic } from "../../../queries/useGetOrderPublic.ts";
 import { Card } from "../../common/Card";
 import { CheckoutContent } from "../../layouts/Checkout/CheckoutContent";
 import { HomepageInfoMessage } from "../../common/HomepageInfoMessage";
 import { eventCheckoutPath, eventHomepagePath, eventHomepageUrl } from "../../../utilites/urlHelper.ts";
+import { formatCard, formatPhone, validateExpDate, validateCard, validateCvv, validateBankAccount, validateBankCode, validateInternationalPhone } from "../../../utilites/formatInputs.ts";
 import { Event } from "../../../types.ts";
 import "./GrubchainCheckoutForm.module.scss"
 import { Button } from "../../common/Button/index.tsx";
-import { gapi, vaultApi } from "../../../api/grubchainApiClient.tsx";
+import { gapi } from "../../../api/grubchainApiClient.tsx";
 import { getToken } from "../../../api/grubchainTokenizerApiClient.ts";
 import { orderClientPublic, orderClient } from "../../../api/order.client.ts";
 import { getConfig } from "../../../utilites/config.ts";
@@ -35,19 +35,38 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [allowEmails, setAllowEmails] = useState(Boolean);
 
   const [paymentToken, setPaymentToken] = useState("");
+  const [businessId, setBusinessId] = useState("");
 
   const [transferBankName, setTransferBankName] = useState("");
   const [transferBankAcc, setTransferBankAcc] = useState("");
   const [transferBankAmount, setTransferBankAmount] = useState("");
 
+  const [payWithBankAmount, setPayWithBankAmount] = useState("");
+  const [payWithBankAccount, setPayWithBankAccount] = useState("");
+  const [payWithBankCode, setPayWithBankCode] = useState("");
+
+  const [payWithKudaAccount, setPayWithKudaAccount] = useState("");
+  const [payWithKudaCode, setPayWithKudaCode] = useState("");
+  const [payWithKudaToken, setPayWithKudaToken] = useState("");
+  const [payWithKudaPhone, setPayWithKudaPhone] = useState("");
+
   const [cardNum, setCardNum] = useState("");
   const [cardExp, setCardExp] = useState("");
   const [cardCvv, setCardCvv] = useState("");
+  const [cardExpDateError, setCardExpDateError] = useState("");
+  const [cardCvvError, setCardCvvError] = useState("");
+  const [cardNumError, setCardNumError] = useState(" ");
 
-  const allPaymentMethods = ["card", "transfer", "bank", "USSD"];
+  const [bankAccountNumError, setBankAccountNumErr] = useState(" ");
+  const [bankAccountCodeErr, setBankAccountCodeErr] = useState(" ");
+  const [phoneNumErr, setPhoneNumErr] = useState(" ");
+  const [kudaTokenErr, setKudaTokenErr] = useState(" ");
+
+
+  const allPaymentMethods = ["card", "bank", "kuda", "USSD"]; //"transfer",
+
   useEffect(() => {
     console.log(order);
-    console.log();
     setTransferBankName(getConfig('VITE_GRUBCHAIN_BANK_ACCOUNT_TRANSFER'));
     setTransferBankAcc(getConfig('VITE_GRUBCHAIN_BANK_ACCOUNT_NUMBER'));
     setTransferBankAmount(order.total_gross * 100);
@@ -59,6 +78,62 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const handleSubmit = async () => {
 
   };
+
+  const validateCardExpDate = (date: string) => {
+    if (!validateExpDate(date)) {
+      setCardExpDateError("Invalid expiry date");
+    } else {
+      setCardExpDateError("");
+    }
+  }
+
+  const validateCardNum = (card: string) => {
+    if (!validateCard(card)) {
+      setCardNumError("Invalid Card Number");
+    } else {
+      setCardNumError("");
+    }
+  }
+
+  const validateCvvNum = (cvv: string) => {
+    if (!validateCvv(cvv)) {
+      setCardCvvError("Invalid CVV");
+    } else {
+      setCardCvvError("");
+    }
+  }
+
+  const validateBankAccountNum = (bankAccount: string) => {
+    if (!validateBankAccount(bankAccount)) {
+      setBankAccountNumErr("Invalid Bank Account");
+    } else {
+      setBankAccountNumErr("");
+    }
+  }
+
+  const validateBankCodeNum = (bankCode: string) => {
+    if (!validateBankCode(bankCode)) {
+      setBankAccountCodeErr("Invalid Bank Code");
+    } else {
+      setBankAccountCodeErr("");
+    }
+  }
+
+  const validatePhoneNum = (phone: string) => {
+    if (!validateInternationalPhone(phone)) {
+      setPhoneNumErr("Invalid Phone Number");
+    } else {
+      setPhoneNumErr("");
+    }
+  }
+
+  const validateKudaToken = (token: string) => {
+    if (token.length<1) {
+      setKudaTokenErr("Invalid Token");
+    } else {
+      setKudaTokenErr("");
+    }
+  }
 
   const setTheCheckoutState = () => {
     setCheckoutState(paymentMethod);
@@ -75,17 +150,22 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         let year = parseInt(cardExp.slice(2), 10);
         getToken(
           jwtToken,
-          { "card_number": cardNum, "expiry_year": year, "expiry_month": month }
+          { "card_number": cardNum.replace(/\s+/g, ""), "expiry_year": year, "expiry_month": month }
         ).then(response => {
           setPaymentToken(response.token);
-          gapi.post('vault/charge', {
-            "token_id": paymentToken,
-            "amount_cents": order.total_gross * 100,
-            "currency": order.currency,
-            "merchant_ref": orderShortId,
-            "agree_to_terms": orderShortId,
-            "allow_promotions": orderShortId,
-            "notify_crypto": orderShortId
+          setBusinessId(response.business_id);
+
+          gapi.post('api/v1/psk/purchase/card', {
+            "token": paymentToken,
+            "amount": order.total_gross * 100,
+            "email": order.email,
+            "cvv": cardCvv,
+            "business_id": businessId,
+            "agree_to_terms": agreeToTerms,
+            "allow_promotions": allowEmails,
+            "notify_crypto": notifyCryptoAvailable
+          }).then(response => {
+            // if success, areapass order is complete
           });
         });
       });
@@ -94,14 +174,96 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
     }
   }
 
+  const payBank = async () => {
+    orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
+
+      getToken(
+        jwtToken,
+        { "card_number": cardNum, "expiry_year": year, "expiry_month": month }
+      ).then(response => {
+        setPaymentToken(response.token);
+        setBusinessId(response.business_id);
+        setPayWithBankAmount(order.total_gross * 100);
+
+        gapi.post('api/v1/psk/purchase/bank', {
+          "token": paymentToken,
+          "amount": payWithBankAmount,
+          "email": order.email,
+          "bank_code": payWithBankCode,
+          "bank_account_number": payWithBankAccount,
+          "business_id": businessId,
+          "agree_to_terms": agreeToTerms,
+          "allow_promotions": allowEmails,
+          "notify_crypto": notifyCryptoAvailable
+        }).then(response => {
+          // if success, areapass order is complete
+        });
+      });
+    });
+  }
+
+  const payKuda = async () => {
+    orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
+
+      getToken(
+        jwtToken,
+        { "card_number": cardNum, "expiry_year": year, "expiry_month": month }
+      ).then(response => {
+        setPaymentToken(response.token);
+        setBusinessId(response.business_id);
+
+        gapi.post('api/v1/psk/purchase/kuda', {
+          "token": paymentToken,
+          "amount": order.total_gross * 100,
+          "email": order.email,
+          "bank_code": payWithKudaCode,
+          "phone_number": payWithKudaPhone,
+          "business_id": businessId,
+          "agree_to_terms": agreeToTerms,
+          "allow_promotions": allowEmails,
+          "notify_crypto": notifyCryptoAvailable
+        }).then(response => {
+          // if success, areapass order is complete
+        });
+      });
+    });
+  }
+
+  const payUssd = async () => {
+    orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
+
+      getToken(
+        jwtToken,
+        { "card_number": cardNum, "expiry_year": year, "expiry_month": month }
+      ).then(response => {
+        setPaymentToken(response.token);
+        setBusinessId(response.business_id);
+
+        gapi.post('api/v1/psk/purchase/kuda', {
+          "token": paymentToken,
+          "amount": order.total_gross * 100,
+          "email": order.email,
+          "ussd_type": "",
+          "business_id": businessId,
+          "agree_to_terms": agreeToTerms,
+          "allow_promotions": allowEmails,
+          "notify_crypto": notifyCryptoAvailable
+        }).then(response => {
+          // if success, areapass order is complete
+        });
+      });
+    });
+  }
+
   const payTransfer = async () => {
-    orderClientPublic.transitionToOfflinePayment(eventId,orderShortId);
+    orderClientPublic.transitionToOfflinePayment(eventId, orderShortId);
     order.order_items.map(item => {
       orderClient.markAsPaid(eventId, item.order_id);
     });
     handleSubmit();
     navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
   }
+
   useEffect(() => {
     if (setSubmitHandler) {
       setSubmitHandler(() => handleSubmit);
@@ -247,21 +409,22 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
     return (
       <form id="payment-form">
         <h2>
-          {t`Payment`}
+          {t`Pay with Card`}
         </h2>
         <Stack>
           <LoadingMask />
           <Card>
+            <TextInput
+              withAsterisk
+              value={cardNum}
+              maxLength={19}
+              label={t`Card Number`}
+              placeholder={t`Card Number`}
+              keyboardType="number-pad"
+              onChange={(e) => { setCardNum(formatCard(e.currentTarget.value.replace(/[^0-9]/g, ''))); validateCardNum(formatCard(e.currentTarget.value.replace(/[^0-9]/g, ''))); }}
+              error={cardNumError}
+            />
             <InputGroup>
-              <TextInput
-                withAsterisk
-                value={cardNum}
-                maxLength={16}
-                label={t`Card Number`}
-                placeholder={t`Card Number`}
-                keyboardType="number-pad"
-                onChange={(e) => setCardNum(e.currentTarget.value.replace(/[^0-9]/g, ''))}
-              />
               <TextInput
                 withAsterisk
                 label={t`Expiry Date`}
@@ -269,17 +432,19 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                 value={cardExp}
                 maxLength={4}
                 keyboardType="number-pad"
-                onChange={(e) => setCardExp(e.currentTarget.value.replace(/[^0-9]/g, ''))}
+                onChange={(e) => { setCardExp(e.currentTarget.value.replace(/[^0-9]/g, '')); validateCardExpDate(e.currentTarget.value.replace(/[^0-9]/g, '')); }}
+                error={cardExpDateError}
               />
-              {/* <TextInput
+              <TextInput
                 withAsterisk
                 label={t`CVV`}
                 placeholder={t`123`}
                 maxLength={3}
                 keyboardType="number-pad"
                 value={cardCvv}
-                onChange={(e) => setCardCvv(e.currentTarget.value.replace(/[^0-9]/g, ''))}
-              /> */}
+                onChange={(e) => { setCardCvv(e.currentTarget.value.replace(/[^0-9]/g, '')); validateCvvNum(e.currentTarget.value.replace(/[^0-9]/g, '')); }}
+                error={cardCvvError}
+              />
             </InputGroup>
           </Card>
           <Group spacing="lg" m="10px" justify="space-between">
@@ -294,7 +459,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={() => { setCheckoutState("cardConfirm"); }}
+              onClick={() => { if (!cardCvvError && !cardExpDateError && !cardNumError) setCheckoutState("cardConfirm"); }}
               className={"checkout"}>
               {t`Next`}
             </Button>
@@ -320,8 +485,12 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             </InputGroup>
             <InputGroup>
               <span className={"card-detail-label"}>Expiry Date</span><Text>{cardExp}</Text>
-              {/* <h4>CVV</h4>
-              <Text>{cardCvv}</Text> */}
+            </InputGroup>
+            <InputGroup>
+              <span className={"card-detail-label"}>CVV</span><Text>***</Text>
+            </InputGroup>
+            <InputGroup>
+              <span className={"card-detail-label"}>Amount</span><Text>{order.total_gross} {order.currency}</Text>
             </InputGroup>
           </Card>
           <Group spacing="lg" m="10px" justify="space-between">
@@ -399,7 +568,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
     return (
       <form id="payment-form">
         <h2>
-          {t`Payment`}
+          {t`Pay with Bank`}
         </h2>
 
         <LoadingMask />
@@ -409,6 +578,17 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               withAsterisk
               label={t`Account Number`}
               placeholder={t`Account Number`}
+              maxLength={20}
+              onChange={(e) => { setPayWithBankAccount(e.currentTarget.value); validateBankAccountNum(e.currentTarget.value); }}
+              error={bankAccountNumError}
+            />
+            <TextInput
+              withAsterisk
+              maxLength={6}
+              label={t`Bank Code`}
+              placeholder={t`Bank Code`}
+              onChange={(e) => { setPayWithBankCode(e.currentTarget.value); validateBankCodeNum(e.currentTarget.value); }}
+              error={bankAccountCodeErr}
             />
           </InputGroup>
 
@@ -424,13 +604,167 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={setTheCheckoutState}
+              onClick={() => { if (!bankAccountCodeErr && !bankAccountNumError) setCheckoutState("bankConfirm"); }}
               className={"checkout"}>
               {t`Next`}
             </Button>
           </Group>
 
         </Card>
+      </form >
+    );
+  }
+
+  if (checkoutState === 'bankConfirm') {
+    return (
+      <form id="payment-form">
+        <h2>
+          {t`Pay with Bank`}
+        </h2>
+        <LoadingMask />
+        <Card>
+          <h3>Confirm bank details</h3>
+          <InputGroup>
+            <span className={"card-detail-label"}>Bank Account</span><Text>{payWithBankAccount}</Text>
+          </InputGroup>
+          <InputGroup>
+            <span className={"card-detail-label"}>Bank code</span><Text>{payWithBankCode}</Text>
+          </InputGroup>
+          <InputGroup>
+            <span className={"card-detail-label"}>Amount</span><Text>{order.total_gross} {order.currency}</Text>
+          </InputGroup>
+        </Card>
+        <Group spacing="lg" m="10px" justify="space-between">
+          <Button
+            size="md"
+            onClick={resetTheCheckoutState}
+            variant="outline"
+            className={"cancel"}>
+            {t`Cancel`}
+          </Button>
+          <Button
+            size="md"
+            color="#0e0cff"
+            variant="filled"
+            onClick={payBank}
+            className={"checkout"}>
+            {t`Checkout`}
+          </Button>
+        </Group>
+      </form >
+    );
+  }
+
+  if (checkoutState === 'kuda') {
+    return (
+      <form id="payment-form">
+        <h2>
+          {t`Pay with Kuda`}
+        </h2>
+
+        <LoadingMask />
+        <Card>
+          <InputGroup>
+            <TextInput
+              withAsterisk
+              label={t`Account Number`}
+              placeholder={t`Account Number`}
+              value={payWithKudaAccount}
+              onChange={(e) => { setPayWithKudaAccount(e.currentTarget.value); validateBankAccountNum(e.currentTarget.value); }}
+              error={bankAccountNumError}
+            />
+            <TextInput
+              withAsterisk
+              label={t`Code`}
+              placeholder={t`Code`}
+              value={payWithKudaCode}
+              onChange={(e) => { setPayWithKudaCode(e.currentTarget.value); validateBankCodeNum(e.currentTarget.value) }}
+              error={bankAccountCodeErr}
+            />
+          </InputGroup>
+
+          <InputGroup>
+            <TextInput
+              withAsterisk
+              label={t`Phone number`}
+              placeholder={t`Phone Number`}
+              maxLength={20}
+              value={payWithKudaPhone}
+              onChange={(e) => { setPayWithKudaPhone(e.currentTarget.value); validatePhoneNum(e.currentTarget.value); }}
+              error={phoneNumErr}
+            />
+            <TextInput
+              withAsterisk
+              label={t`Token `}
+              placeholder={t`Token`}
+              maxLength={20}
+              value={payWithKudaToken}
+              onChange={(e) => { setPayWithKudaToken(e.currentTarget.value); validateKudaToken(e.currentTarget.value); }}
+              error={kudaTokenErr}
+            />
+          </InputGroup>
+          <Group spacing="lg" m="10px" justify="space-between">
+            <Button
+              size="md"
+              onClick={resetTheCheckoutState}
+              variant="outline"
+              className={"cancel"}>
+              {t`Cancel`}
+            </Button>
+            <Button
+              size="md"
+              color="#0e0cff"
+              variant="filled"
+              onClick={() => { if (!bankAccountCodeErr && !bankAccountNumError && !phoneNumErr && !kudaTokenErr) setCheckoutState("kudaConfirm"); }}
+              className={"checkout"}>
+              {t`Next`}
+            </Button>
+          </Group>
+
+        </Card>
+      </form >
+    );
+  }
+
+  if (checkoutState === 'kudaConfirm') {
+    return (
+      <form id="payment-form">
+        <h2>
+          {t`Pay with Kuda`}
+        </h2>
+        <LoadingMask />
+        <Card>
+          <h3>Confirm Kuda details</h3>
+          <InputGroup>
+            <span className={"card-detail-label"}>Account</span><Text>{payWithKudaAccount}</Text>
+          </InputGroup>
+          <InputGroup>
+            <span className={"card-detail-label"}>Code</span><Text>{payWithKudaCode}</Text>
+          </InputGroup>
+          <InputGroup>
+            <span className={"card-detail-label"}>Phone</span><Text>{payWithKudaPhone}</Text>
+          </InputGroup>
+          <InputGroup>
+            <span className={"card-detail-label"}>Amount</span><Text>{order.total_gross} {order.currency}</Text>
+          </InputGroup>
+        </Card>
+        <Group spacing="lg" m="10px" justify="space-between">
+          <Button
+            size="md"
+            onClick={resetTheCheckoutState}
+            variant="outline"
+            className={"cancel"}>
+            {t`Cancel`}
+          </Button>
+          <Button
+            size="md"
+            color="#0e0cff"
+            variant="filled"
+            onClick={payKuda}
+            className={"checkout"}>
+            {t`Checkout`}
+          </Button>
+        </Group>
       </form >
     );
   }
@@ -471,7 +805,6 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       </form >
     );
   }
-
 
   if (checkoutState === 'waiting') {
     return (

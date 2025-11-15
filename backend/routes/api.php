@@ -74,6 +74,8 @@ use HiEvents\Http\Actions\Orders\MessageOrderAction;
 use HiEvents\Http\Actions\Orders\Payment\RefundOrderAction;
 use HiEvents\Http\Actions\Orders\Payment\Stripe\CreatePaymentIntentActionPublic;
 use HiEvents\Http\Actions\Orders\Payment\Stripe\GetPaymentIntentActionPublic;
+use HiEvents\Http\Actions\Orders\Payment\Grubchain\CreatePaymentIntentActionPublic as CPAG;
+use HiEvents\Http\Actions\Orders\Payment\Grubchain\GetPaymentIntentActionPublic as GPAG;
 use HiEvents\Http\Actions\Orders\Payment\Grubchain\CreatePaymentIntentActionPublicJwt;
 use HiEvents\Http\Actions\Orders\Public\CompleteOrderActionPublic;
 use HiEvents\Http\Actions\Orders\Public\CreateOrderActionPublic;

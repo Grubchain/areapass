@@ -624,6 +624,12 @@ export interface StripePaymentIntent {
   amount: number;
 }
 
+export interface GrubchainPaymentIntent {
+  status: string;
+  paymentIntentId: string;
+  amount: number;
+}
+
 export interface Question {
   id?: number;
   title: string;

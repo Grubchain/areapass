@@ -92,13 +92,12 @@ export const PaymentAndInvoicingSettings = () => {
       label: t`GrubChain`,
       description: t`Accept credit card payments with GrubChain`
     },
-    /*
     {
     value: "OFFLINE",
     label: t`Offline Payments`,
     description: t`Accept bank transfers, checks, or other offline payment methods`
     },
-    */
+
   ];
 
   return (
