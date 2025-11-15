@@ -11,6 +11,5 @@ export const useCreateGrubchainPaymentData = async (
         Number(eventId),
         String(orderShortId),
     );
-    console.log(data);
     return { data, isFetched: true, error: {} };
 };

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { InputGroup } from "../../common/InputGroup";
 import { TextInput, Stack } from "@mantine/core";
-import { useParams } from "react-router";
 import { t } from "@lingui/macro";
 import { Alert, Skeleton, Radio, Text, Checkbox, Group } from "@mantine/core";
 import { LoadingMask } from "../../common/LoadingMask";
@@ -13,7 +13,10 @@ import { eventCheckoutPath, eventHomepagePath, eventHomepageUrl } from "../../..
 import { Event } from "../../../types.ts";
 import "./GrubchainCheckoutForm.module.scss"
 import { Button } from "../../common/Button/index.tsx";
-import { gapi } from "../../../api/grubchainApiClient.tsx";
+import { gapi, vaultApi } from "../../../api/grubchainApiClient.tsx";
+import { getToken } from "../../../api/grubchainTokenizerApiClient.ts";
+import { orderClientPublic, orderClient } from "../../../api/order.client.ts";
+import { getConfig } from "../../../utilites/config.ts";
 
 export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   setSubmitHandler: (submitHandler: () => () => Promise<void>) => void
@@ -22,9 +25,16 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [message, setMessage] = useState<string | undefined>('');
   const { data: order, isFetched: isOrderFetched } = useGetOrderPublic(eventId, orderShortId, ['event']);
   const event = order?.event;
+  const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("");
   const [checkoutState, setCheckoutState] = useState("");
   const [ussdCode, setUssdCode] = useState(0);
+
+  const [agreeToTerms, setAgreeToTerms] = useState(Boolean);
+  const [notifyCryptoAvailable, setNotifyCryptoAvailable] = useState(Boolean);
+  const [allowEmails, setAllowEmails] = useState(Boolean);
+
+  const [paymentToken, setPaymentToken] = useState("");
 
   const [transferBankName, setTransferBankName] = useState("");
   const [transferBankAcc, setTransferBankAcc] = useState("");
@@ -34,7 +44,17 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [cardExp, setCardExp] = useState("");
   const [cardCvv, setCardCvv] = useState("");
 
-  const allPaymentMethods = ["card", "transfer", "USSD"];//"bank",
+  const allPaymentMethods = ["card", "transfer", "bank", "USSD"];
+  useEffect(() => {
+    console.log(order);
+    console.log();
+    setTransferBankName(getConfig('VITE_GRUBCHAIN_BANK_ACCOUNT_TRANSFER'));
+    setTransferBankAcc(getConfig('VITE_GRUBCHAIN_BANK_ACCOUNT_NUMBER'));
+    setTransferBankAmount(order.total_gross * 100);
+    if (setSubmitHandler) {
+      setSubmitHandler(() => handleSubmit);
+    }
+  }, [setSubmitHandler, order]);
 
   const handleSubmit = async () => {
 
@@ -50,15 +70,38 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   const payCard = async () => {
     try {
-      const response = await gapi.post('vault/charge', {
-        card_number: cardNum,
-        expiry_year:parseInt(cardExp.slice(0, 2), 10),
-        expiry_month:parseInt(cardExp.slice(2), 10)
+      orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
+        let month = parseInt(cardExp.slice(0, 2), 10);
+        let year = parseInt(cardExp.slice(2), 10);
+        getToken(
+          jwtToken,
+          { "card_number": cardNum, "expiry_year": year, "expiry_month": month }
+        ).then(response => {
+          setPaymentToken(response.token);
+          gapi.post('vault/charge', {
+            "token_id": paymentToken,
+            "amount_cents": order.total_gross * 100,
+            "currency": order.currency,
+            "merchant_ref": orderShortId,
+            "agree_to_terms": orderShortId,
+            "allow_promotions": orderShortId,
+            "notify_crypto": orderShortId
+          });
+        });
       });
     } catch (error) {
+
     }
   }
 
+  const payTransfer = async () => {
+    orderClientPublic.transitionToOfflinePayment(eventId,orderShortId);
+    order.order_items.map(item => {
+      orderClient.markAsPaid(eventId, item.order_id);
+    });
+    handleSubmit();
+    navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
+  }
   useEffect(() => {
     if (setSubmitHandler) {
       setSubmitHandler(() => handleSubmit);
@@ -154,6 +197,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                 m="7px"
                 color="#000"
                 name="notifyMe"
+                onChange={(e: any) => setNotifyCryptoAvailable(e.currentTarget.checked)}
                 label="Notify me when crypto payments are available"
                 className="notify" />
             </Stack>
@@ -164,11 +208,13 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                 color="#000"
                 defaultChecked
                 name="agree"
+                onChange={(e: any) => setAgreeToTerms(e.currentTarget.checked)}
                 label="I agree to the Areapass's terms and conditions"
                 className="checkAgree" />
               <Checkbox
                 name="allowEmail"
                 color="#000"
+                onChange={(e: any) => setAllowEmails(e.currentTarget.checked)}
                 label="Allow Areapass to send me promotional emails"
                 className="checkAllow" />
             </Stack>
@@ -206,16 +252,16 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <Stack>
           <LoadingMask />
           <Card>
-            <TextInput
-              withAsterisk
-              value={cardNum}
-              maxLength={16}
-              label={t`Card Number`}
-              placeholder={t`Card Number`}
-              keyboardType="number-pad"
-              onChange={(e) => setCardNum(e.currentTarget.value.replace(/[^0-9]/g, ''))}
-            />
             <InputGroup>
+              <TextInput
+                withAsterisk
+                value={cardNum}
+                maxLength={16}
+                label={t`Card Number`}
+                placeholder={t`Card Number`}
+                keyboardType="number-pad"
+                onChange={(e) => setCardNum(e.currentTarget.value.replace(/[^0-9]/g, ''))}
+              />
               <TextInput
                 withAsterisk
                 label={t`Expiry Date`}
@@ -225,7 +271,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                 keyboardType="number-pad"
                 onChange={(e) => setCardExp(e.currentTarget.value.replace(/[^0-9]/g, ''))}
               />
-              <TextInput
+              {/* <TextInput
                 withAsterisk
                 label={t`CVV`}
                 placeholder={t`123`}
@@ -233,7 +279,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                 keyboardType="number-pad"
                 value={cardCvv}
                 onChange={(e) => setCardCvv(e.currentTarget.value.replace(/[^0-9]/g, ''))}
-              />
+              /> */}
             </InputGroup>
           </Card>
           <Group spacing="lg" m="10px" justify="space-between">
@@ -268,13 +314,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           <LoadingMask />
           <Card>
             <h3>Confirm card details</h3>
-            <h4>Card</h4>
-            <Text>{cardNum}</Text>
+
             <InputGroup>
-              <h4>Expiry Date</h4>
-              <Text>{cardExp}</Text>
-              <h4>CVV</h4>
-              <Text>{cardCvv}</Text>
+              <span className={"card-detail-label"}>Card</span><Text>{cardNum}</Text>
+            </InputGroup>
+            <InputGroup>
+              <span className={"card-detail-label"}>Expiry Date</span><Text>{cardExp}</Text>
+              {/* <h4>CVV</h4>
+              <Text>{cardCvv}</Text> */}
             </InputGroup>
           </Card>
           <Group spacing="lg" m="10px" justify="space-between">
@@ -309,17 +356,21 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <LoadingMask />
         <Card>
           <InputGroup>
-            <h4>Bank Name</h4>
+            <span className={"card-detail-label"}>Bank Name</span>
             <Text>
               {transferBankName}
             </Text>
-            <h4>Account Number</h4>
+          </InputGroup>
+          <InputGroup>
+            <span className={"card-detail-label"}>Account Number</span>
             <Text>
               {transferBankAcc}
             </Text>
-            <h4>Amount</h4>
+          </InputGroup>
+          <InputGroup>
+            <span className={"card-detail-label"}>Amount</span>
             <Text>
-              {transferBankAmount}
+              {order.total_gross} {order.currency}
             </Text>
           </InputGroup>
         </Card>
@@ -335,7 +386,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             size="md"
             color="#0e0cff"
             variant="filled"
-            onClick={setTheCheckoutState}
+            onClick={payTransfer}
             className={"checkout"}>
             {t`I have sent the money`}
           </Button>
