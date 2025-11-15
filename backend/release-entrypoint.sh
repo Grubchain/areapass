@@ -25,7 +25,7 @@ set -euo pipefail
 #nc -z 127.0.0.1 15432 && echo "Port 15432 open" || echo "Port 15432 closed"
 #nc -z 127.0.0.1 5432 && echo "Port 5432 open" || echo "Port 5432 closed"
 
-#php artisan migrate --force
+php artisan migrate --force
 
 #pkill -f autossh || true
 
