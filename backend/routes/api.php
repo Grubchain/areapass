@@ -74,6 +74,7 @@ use HiEvents\Http\Actions\Orders\MessageOrderAction;
 use HiEvents\Http\Actions\Orders\Payment\RefundOrderAction;
 use HiEvents\Http\Actions\Orders\Payment\Stripe\CreatePaymentIntentActionPublic;
 use HiEvents\Http\Actions\Orders\Payment\Stripe\GetPaymentIntentActionPublic;
+use HiEvents\Http\Actions\Orders\Payment\Grubchain\CreatePaymentIntentActionPublicJwt;
 use HiEvents\Http\Actions\Orders\Public\CompleteOrderActionPublic;
 use HiEvents\Http\Actions\Orders\Public\CreateOrderActionPublic;
 use HiEvents\Http\Actions\Orders\Public\DownloadOrderInvoicePublicAction;
@@ -364,6 +365,9 @@ $router->prefix('/public')->group(
         // Stripe payment gateway
         $router->post('/events/{event_id}/order/{order_short_id}/stripe/payment_intent', CreatePaymentIntentActionPublic::class);
         $router->get('/events/{event_id}/order/{order_short_id}/stripe/payment_intent', GetPaymentIntentActionPublic::class);
+
+        // grubchain
+        $router->get('/events/{event_id}/order/{order_short_id}/grubchain/jwt', CreatePaymentIntentActionPublicJwt::class);
 
         // Questions
         $router->get('/events/{event_id}/questions', GetQuestionsPublicAction::class);
