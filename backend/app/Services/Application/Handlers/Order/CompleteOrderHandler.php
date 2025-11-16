@@ -105,6 +105,44 @@ class CompleteOrderHandler
     }
 
     /**
+     * @throws ResourceNotFoundException|ResourceConflictException|RuntimeException
+     */
+    public function handleGrubchain(string $orderShortId, CompleteOrderDTO $orderData): OrderDomainObject
+    {
+        $updatedOrder = DB::transaction(function () use ($orderData, $orderShortId) {
+            $orderDTO = $orderData->order;
+
+            $order = $this->getGrubchainOrder($orderShortId);
+
+            $updatedOrder = $this->updateOrderPaid($order, $orderDTO);
+
+            $this->createAttendees($orderData->products, $order);
+
+            if ($orderData->order->questions) {
+                $this->createOrderQuestions($orderDTO->questions, $order);
+            }
+
+            //  paid via grubchain
+            $this->productQuantityUpdateService->updateQuantitiesFromOrder($updatedOrder);
+
+            return $updatedOrder;
+        });
+
+        OrderStatusChangedEvent::dispatch($updatedOrder);
+
+        if ($updatedOrder->isOrderCompleted()) {
+            $this->domainEventDispatcherService->dispatch(
+                new OrderEvent(
+                    type: DomainEventType::ORDER_CREATED,
+                    orderId: $updatedOrder->getId(),
+                )
+            );
+        }
+
+        return $updatedOrder;
+    }
+
+    /**
      * @param Collection<CompleteOrderProductDataDTO> $orderProducts
      * @throws Exception
      */
@@ -274,6 +312,27 @@ class CompleteOrderHandler
         return $order;
     }
 
+
+    /**
+     * @throws ResourceConflictException
+     */
+    private function getGrubchainOrder(string $orderShortId): OrderDomainObject
+    {
+        $order = $this->orderRepository
+            ->loadRelation(
+                new Relationship(
+                    domainObject: OrderItemDomainObject::class,
+                    nested: [new Relationship(ProductDomainObject::class, name: 'product')]
+                ))
+            ->findByShortId($orderShortId);
+
+        if ($order === null) {
+            throw new ResourceNotFoundException(__('Order not found'));
+        }
+
+        return $order;
+    }
+
     private function updateOrder(OrderDomainObject $order, CompleteOrderOrderDTO $orderDTO): OrderDomainObject
     {
         $updatedOrder = $this->orderRepository
@@ -301,6 +360,26 @@ class CompleteOrderHandler
                 $updatedOrder->getTotalGross()
             );
         }
+
+        return $updatedOrder;
+    }
+
+
+    private function updateOrderPaid(OrderDomainObject $order, CompleteOrderOrderDTO $orderDTO): OrderDomainObject
+    {
+        $updatedOrder = $this->orderRepository
+            ->loadRelation(OrderItemDomainObject::class)
+            ->updateFromArray(
+                $order->getId(),
+                [
+                    OrderDomainObjectAbstract::ADDRESS => $orderDTO->address,
+                    OrderDomainObjectAbstract::FIRST_NAME => $orderDTO->first_name,
+                    OrderDomainObjectAbstract::LAST_NAME => $orderDTO->last_name,
+                    OrderDomainObjectAbstract::EMAIL => $orderDTO->email,
+                    OrderDomainObjectAbstract::PAYMENT_STATUS => OrderPaymentStatus::PAYMENT_RECEIVED->name,
+                    OrderDomainObjectAbstract::STATUS => OrderStatus::COMPLETED->name,
+                ]
+            );
 
         return $updatedOrder;
     }
