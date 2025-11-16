@@ -9,7 +9,7 @@ export const useGetOrderGrubchainPaymentIntentPublic = (eventId: IdParam, orderS
         queryKey: [GET_ORDER_GRUBCHAIN_PAYMENT_INTENT_PUBLIC_QUERY_KEY, eventId, orderShortId],
 
         queryFn: async () => {
-            const {data} = await orderClientPublic.findOrderGrubchainPaymentIntent(Number(eventId), String(orderShortId));
+            const {data} = await orderClientPublic.findOrderGrubchain(Number(eventId), String(orderShortId));
             return data;
         },
 
