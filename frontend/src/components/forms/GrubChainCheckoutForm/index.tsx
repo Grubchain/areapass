@@ -128,7 +128,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   }
 
   const validateKudaToken = (token: string) => {
-    if (token.length<1) {
+    if (token.length < 1) {
       setKudaTokenErr("Invalid Token");
     } else {
       setKudaTokenErr("");
@@ -145,6 +145,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   const payCard = async () => {
     try {
+
       orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
         let month = parseInt(cardExp.slice(0, 2), 10);
         let year = parseInt(cardExp.slice(2), 10);
@@ -154,7 +155,6 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         ).then(response => {
           setPaymentToken(response.token);
           setBusinessId(response.business_id);
-
           gapi.post('api/v1/psk/purchase/card', {
             "token": paymentToken,
             "amount": order.total_gross * 100,
@@ -166,6 +166,11 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             "notify_crypto": notifyCryptoAvailable
           }).then(response => {
             // if success, areapass order is complete
+            const products =  order.attendees;
+            const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products});
+            if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
+              window.location = `/checkout/${eventId}/${orderShortId}/summary`
+            }
           });
         });
       });

@@ -199,14 +199,15 @@ export const orderClientPublic = {
 
     return response.data && response.data.jwt_token ? response.data.jwt_token : null;
   },
-  findOrderGrubchainPaymentIntent: async (
+  findOrderGrubchain: async (
     eventId: number,
     orderShortId: string,
   ) => {
-    return await publicApi.get<StripePaymentIntent>(
-      `events/${eventId}/order/${orderShortId}/grubchain/payment_intent`,
+    return await publicApi.get<Order>(
+      `events/${eventId}/order/${orderShortId}`,
     );
   },
+
   createGrubchainPaymentIntent: async (
     eventId: number,
     orderShortId: string,
@@ -225,6 +226,20 @@ export const orderClientPublic = {
   ) => {
     const response = await publicApi.put<GenericDataResponse<Order>>(
       `events/${eventId}/order/${orderShortId}`,
+      payload,
+    );
+    return response.data;
+  },
+
+
+  payGrubchainOrder: async (
+    eventId: number,
+    orderShortId: string,
+    jwt: string,
+    payload: FinaliseOrderPayload,
+  ) => {
+    const response = await publicApi.post<GenericDataResponse<Order>>(
+      `events/${eventId}/order/${orderShortId}/jwt/${jwt}`,
       payload,
     );
     return response.data;
