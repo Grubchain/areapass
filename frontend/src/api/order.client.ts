@@ -60,7 +60,7 @@ export const orderClient = {
   all: async (eventId: IdParam, pagination: QueryFilters) => {
     const response = await api.get<GenericPaginatedResponse<Order>>(
       `events/${eventId}/orders` +
-      queryParamsHelper.buildQueryString(pagination),
+        queryParamsHelper.buildQueryString(pagination),
     );
     return response.data;
   },
@@ -92,9 +92,12 @@ export const orderClient = {
   },
 
   cancel: async (eventId: IdParam, orderId: IdParam, refund?: boolean) => {
-    const response = await api.post<GenericDataResponse<Order>>('events/' + eventId + '/orders/' + orderId + '/cancel', {
-      refund: refund ?? false
-    });
+    const response = await api.post<GenericDataResponse<Order>>(
+      "events/" + eventId + "/orders/" + orderId + "/cancel",
+      {
+        refund: refund ?? false,
+      },
+    );
     return response.data;
   },
 
@@ -183,25 +186,15 @@ export const orderClientPublic = {
     );
   },
 
-<<<<<<< HEAD
-    createStripePaymentIntent: async (eventId: number, orderShortId: string) => {
-        const response = await publicApi.post<{
-            client_secret: string,
-            account_id?: string,
-            public_key: string,
-            stripe_platform?: string,
-        }>(`events/${eventId}/order/${orderShortId}/stripe/payment_intent`);
-        return response.data;
-    },
-=======
   createStripePaymentIntent: async (eventId: number, orderShortId: string) => {
     const response = await publicApi.post<{
       client_secret: string;
       account_id?: string;
+      public_key: string;
+      stripe_platform?: string;
     }>(`events/${eventId}/order/${orderShortId}/stripe/payment_intent`);
     return response.data;
   },
->>>>>>> 369734be (Payments methods (ussd, bank, card) (#8))
 
   getGrubchainJwtToken: async (eventId: number, orderShortId: string) => {
     const response = await publicApi.get<{
@@ -209,12 +202,11 @@ export const orderClientPublic = {
       account_id?: string;
     }>(`events/${eventId}/order/${orderShortId}/grubchain/jwt`);
 
-    return response.data && response.data.jwt_token ? response.data.jwt_token : null;
+    return response.data && response.data.jwt_token
+      ? response.data.jwt_token
+      : null;
   },
-  findOrderGrubchain: async (
-    eventId: number,
-    orderShortId: string,
-  ) => {
+  findOrderGrubchain: async (eventId: number, orderShortId: string) => {
     return await publicApi.get<Order>(
       `events/${eventId}/order/${orderShortId}`,
     );
@@ -231,16 +223,12 @@ export const orderClientPublic = {
     return response.data;
   },
 
-<<<<<<< HEAD
-        return new Blob([response.data]);
-    },
-
-    abandonOrder: async (eventId: IdParam, orderShortId: IdParam) => {
-        const response = await publicApi.post<GenericDataResponse<Order>>(`events/${eventId}/order/${orderShortId}/abandon`);
-        return response.data;
-    },
-}
-=======
+  abandonOrder: async (eventId: IdParam, orderShortId: IdParam) => {
+    const response = await publicApi.post<GenericDataResponse<Order>>(
+      `events/${eventId}/order/${orderShortId}/abandon`,
+    );
+    return response.data;
+  },
   finaliseOrder: async (
     eventId: number,
     orderShortId: string,
@@ -252,7 +240,6 @@ export const orderClientPublic = {
     );
     return response.data;
   },
-
 
   payGrubchainOrder: async (
     eventId: number,
@@ -291,4 +278,3 @@ export const orderClientPublic = {
     return new Blob([response.data]);
   },
 };
->>>>>>> 369734be (Payments methods (ussd, bank, card) (#8))
