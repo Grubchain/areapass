@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+// import { useNavigate, useParams } from "react-router";
 import { InputGroup } from "../../common/InputGroup";
 import { t } from "@lingui/macro";
 import { Alert, Skeleton, Radio, Text, Checkbox, Group, TextInput, Stack } from "@mantine/core";
@@ -10,7 +10,7 @@ import { Card } from "../../common/Card";
 import { CheckoutContent } from "../../layouts/Checkout/CheckoutContent";
 import { HomepageInfoMessage } from "../../common/HomepageInfoMessage";
 import { eventCheckoutPath, eventHomepagePath, eventHomepageUrl } from "../../../utilites/urlHelper.ts";
-import { formatCard, formatPhone, validateExpDate, validateCard, validateCvv, validateBankAccount, validateBankCode, validateInternationalPhone } from "../../../utilites/formatInputs.ts";
+import { formatCard, validateExpDate, validateCard, validateCvv, validateBankAccount, validateBankCode, validateInternationalPhone } from "../../../utilites/formatInputs.ts";
 import { Event } from "../../../types.ts";
 import "./GrubchainCheckoutForm.module.scss"
 import { Button } from "../../common/Button/index.tsx";
@@ -353,10 +353,10 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const payTransfer = async () => {
     orderClientPublic.transitionToOfflinePayment(eventId, orderShortId);
     order.order_items.map(item => {
-      orderClient.markAsPaid(eventId, item.order_id);
+      // orderClient.markAsPaid(eventId, item.order_id);
     });
     handleSubmit();
-    navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
+    // navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
   }
 
   useEffect(() => {
