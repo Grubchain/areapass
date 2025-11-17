@@ -134,6 +134,37 @@ export const router: RouteObject[] = [
         ]
     },
     {
+        path: "admin",
+        errorElement: <ErrorPage/>,
+        async lazy() {
+            const AdminLayout = await import("./components/layouts/Admin");
+            return {Component: AdminLayout.default};
+        },
+        children: [
+            {
+                path: "",
+                async lazy() {
+                    const Dashboard = await import("./components/routes/admin/Dashboard");
+                    return {Component: Dashboard.default};
+                }
+            },
+            {
+                path: "accounts",
+                async lazy() {
+                    const Accounts = await import("./components/routes/admin/Accounts");
+                    return {Component: Accounts.default};
+                }
+            },
+            {
+                path: "users",
+                async lazy() {
+                    const Users = await import("./components/routes/admin/Users");
+                    return {Component: Users.default};
+                }
+            }
+        ]
+    },
+    {
         path: "account",
         errorElement: <ErrorPage/>,
         async lazy() {
@@ -339,6 +370,13 @@ export const router: RouteObject[] = [
                 }
             },
             {
+                path: "ticket-designer",
+                async lazy() {
+                    const TicketDesigner = await import("./components/routes/event/TicketDesigner");
+                    return {Component: TicketDesigner.default};
+                }
+            },
+            {
                 path: "getting-started",
                 async lazy() {
                     const GettingStarted = await import("./components/routes/event/GettingStarted");
@@ -470,6 +508,14 @@ export const router: RouteObject[] = [
         async lazy() {
             const PrintProduct = await import("./components/routes/product-widget/PrintProduct");
             return {Component: PrintProduct.default};
+        },
+        errorElement: <ErrorPage/>
+    },
+    {
+        path: "/manage/event/:eventId/ticket-designer/print",
+        async lazy() {
+            const TicketDesignerPrint = await import("./components/routes/event/TicketDesigner/TicketDesignerPrint");
+            return {Component: TicketDesignerPrint.default};
         },
         errorElement: <ErrorPage/>
     },
