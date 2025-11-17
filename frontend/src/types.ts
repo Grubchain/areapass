@@ -30,8 +30,7 @@ export type ConfigKeys =
   | "VITE_GRUBCHAIN_KID"
   | "VITE_GRUBCHAIN_AUD"
   | "VITE_GRUBCHAIN_SCOPE"
-  | "VITE_GRUBCHAIN_BANK_ACCOUNT_TRANSFER"
-  | "VITE_GRUBCHAIN_BANK_ACCOUNT_NUMBER";
+  | "VITE_GRUBCHAIN_BUSINESS_ID";
 
 export type IdParam = string | undefined | number;
 
