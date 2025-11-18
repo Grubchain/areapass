@@ -213,7 +213,7 @@ export const orderClientPublic = {
 
     return {
       headers,
-      payload,
+      payload: payload.raw_body,
     };
   },
   getGrubchainJwtToken: async (
