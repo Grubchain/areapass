@@ -53,56 +53,36 @@ export const StripePaymentMethod = ({ enabled, setSubmitHandler }: StripePayment
     );
   }
 
-  const stripeAccount = stripeData?.account_id;
-  const options = stripeAccount ? {
-    stripeAccount: stripeAccount
-  } : {};
+  if (stripePaymentIntentError && event) {
+    return (
+      <CheckoutContent>
+        <HomepageInfoMessage
+          /* @ts-ignore */
+          message={stripePaymentIntentError.response?.data?.message || t`Sorry, something has gone wrong. Please restart the checkout process.`}
+          link={eventHomepagePath(event)}
+          linkText={t`Return to event page`}
+        />
+      </CheckoutContent>
+    );
+  }
 
-  setStripePromise(loadStripe(getConfig('VITE_STRIPE_PUBLISHABLE_KEY') as string, options));
-}, [stripeData]);
+  if (!isStripeFetched) {
+    return <LoadingMask />;
+  }
 
-if (!enabled) {
+  console.log("Stripe is loading.....")
   return (
-    <CheckoutContent>
-      <HomepageInfoMessage
-        message={t`Stripe payments are not enabled for this event.`}
-        link={eventHomepagePath(event as Event)}
-        linkText={t`Return to event page`}
-      />
-    </CheckoutContent>
+    <>
+      {(!stripePromise) && <LoadingMask />}
+
+      {(isStripeFetched && stripeData?.client_secret && stripePromise) && (
+        <Elements options={{
+          clientSecret: stripeData?.client_secret,
+          loader: 'always',
+        }} stripe={stripePromise}>
+          <StripeCheckoutForm setSubmitHandler={setSubmitHandler} />
+        </Elements>
+      )}
+    </>
   );
-}
-
-if (stripePaymentIntentError && event) {
-  return (
-    <CheckoutContent>
-      <HomepageInfoMessage
-        /* @ts-ignore */
-        message={stripePaymentIntentError.response?.data?.message || t`Sorry, something has gone wrong. Please restart the checkout process.`}
-        link={eventHomepagePath(event)}
-        linkText={t`Return to event page`}
-      />
-    </CheckoutContent>
-  );
-}
-
-if (!isStripeFetched) {
-  return <LoadingMask />;
-}
-
-console.log("Stripe is loading.....")
-return (
-  <>
-    {(!stripePromise) && <LoadingMask />}
-
-    {(isStripeFetched && stripeData?.client_secret && stripePromise) && (
-      <Elements options={{
-        clientSecret: stripeData?.client_secret,
-        loader: 'always',
-      }} stripe={stripePromise}>
-        <StripeCheckoutForm setSubmitHandler={setSubmitHandler} />
-      </Elements>
-    )}
-  </>
-);
 }
