@@ -21,7 +21,7 @@ class CreatePaymentIntentActionPublicJwt extends BaseAction
 
         try {
             $now = time();
-            $privateKey = File::get(config('custom.secret_pem'));
+            $privateKey = config('custom.secret_pem');
 
             $header = ['alg' => 'RS256', 'typ' => 'JWT'];
             if ($keyId) {

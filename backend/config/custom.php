@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\File;
 
 return [
-    'secret_pem' => base_path('secret.pem'),
+    'secret_pem' => env('SECRET_PEM'),
     'GRUBCHAIN_ISS' => env('GRUBCHAIN_ISS'),
     'GRUBCHAIN_KID' => env('GRUBCHAIN_KID'),
     'GRUBCHAIN_AUD' => env('GRUBCHAIN_AUD'),
