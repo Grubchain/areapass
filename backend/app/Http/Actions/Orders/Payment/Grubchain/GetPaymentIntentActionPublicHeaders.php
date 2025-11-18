@@ -50,13 +50,13 @@ class GetPaymentIntentActionPublicHeaders extends BaseAction
 
         // === 7) Headers ===
         return $this->jsonResponse([
-            'HTTP-X-HMAC-VERSION'     => 'v1',
-            'HTTP-X-HMAC-ALG'         => 'HMAC-SHA256',
-            'HTTP-X-HMAC-KID'         => $kid,
-            'HTTP-X-HMAC-TS'          => $ts,
-            'HTTP-X-HMAC-NONCE'       => $nonce,
-            'HTTP-X-HMAC-BODY-DIGEST' => $bodyDigest,
-            'HTTP-X-HMAC-SIGNATURE'   => $signature,
+            'X-HMAC-VERSION'     => 'v1',
+            'X-HMAC-ALG'         => 'HMAC-SHA256',
+            'X-HMAC-KID'         => $kid,
+            'X-HMAC-TS'          => $ts,
+            'X-HMAC-NONCE'       => $nonce,
+            'X-HMAC-BODY-DIGEST' => $bodyDigest,
+            'X-HMAC-SIGNATURE'   => $signature,
         ]);
     }
 
