@@ -37,3 +37,10 @@ export const pskChargeCardData = async ({ cardData, enc, jwt }) => {
     encryptedData: encryptedCard,
   }
 }
+
+export const pskChargeCard = async (headers: any, payload: any) => {
+  gapi.defaults.headers.common = { ...gapi.defaults.headers.common, ...headers };
+  console.log(headers);
+
+  return gapi.post("psk/purchase/card", payload);
+}

@@ -17,6 +17,7 @@ services:
               GRUBCHAIN_AUD: 'tokenizer'
               GRUBCHAIN_KID: 'gc-2025-key-1'
               GRUBCHAIN_SCOPE: 'pan_handle:issue'
+              GRUBCHAIN_HMAC_SECRET: '/bmckvvJs3vOXVhq0GrcjEg6eKRvmBsnALIXqL9A+Gs='
         depends_on:
             - redis
             - mailpit

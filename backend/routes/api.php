@@ -91,6 +91,7 @@ use HiEvents\Http\Actions\Orders\Public\AbandonOrderActionPublic;
 use HiEvents\Http\Actions\Orders\Payment\Grubchain\CreatePaymentIntentActionPublic as CPAG;
 use HiEvents\Http\Actions\Orders\Payment\Grubchain\GetPaymentIntentActionPublic as GPAG;
 use HiEvents\Http\Actions\Orders\Payment\Grubchain\CreatePaymentIntentActionPublicJwt;
+use HiEvents\Http\Actions\Orders\Payment\Grubchain\GetPaymentIntentActionPublicHeaders;
 use HiEvents\Http\Actions\Orders\Public\CompleteGrubchainOrderActionPublic;
 use HiEvents\Http\Actions\Orders\Public\CompleteOrderActionPublic;
 use HiEvents\Http\Actions\Orders\Public\CreateOrderActionPublic;
@@ -420,6 +421,7 @@ $router->prefix('/public')->group(
 
         // grubchain
         $router->get('/events/{event_id}/order/{order_short_id}/grubchain/jwt/{intent}', CreatePaymentIntentActionPublicJwt::class);
+        $router->post('/events/{event_id}/order/{order_short_id}/grubchain/headers/{intent}', GetPaymentIntentActionPublicHeaders::class);
         //  payment done, just mark the order
         $router->post('/events/{event_id}/order/{order_short_id}/jwt/{jwt}', CompleteGrubchainOrderActionPublic::class);
 
