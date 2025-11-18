@@ -196,7 +196,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           const payload = {
             raw_body: body,
             method: "POST",
-            url: "api/v1/psk/purchase/card",
+            url: "/api/v1/psk/purchase/card",
           }
 
           orderClientPublic.getGrubchainHeaders(eventId, orderShortId, payload)
