@@ -195,12 +195,15 @@ export const orderClientPublic = {
     }>(`events/${eventId}/order/${orderShortId}/stripe/payment_intent`);
     return response.data;
   },
-
-  getGrubchainJwtToken: async (eventId: number, orderShortId: string) => {
+  getGrubchainJwtToken: async (
+    eventId: number,
+    orderShortId: string,
+    intent?: string,
+  ) => {
     const response = await publicApi.get<{
       client_secret: string;
       account_id?: string;
-    }>(`events/${eventId}/order/${orderShortId}/grubchain/jwt`);
+    }>(`events/${eventId}/order/${orderShortId}/grubchain/jwt/${intent}`);
 
     return response.data && response.data.jwt_token
       ? response.data.jwt_token

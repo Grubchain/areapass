@@ -13,6 +13,10 @@ services:
         environment:
               APP_ENV: '${APP_ENV:-local}'
               APP_KEY: '${APP_KEY}'
+              GRUBCHAIN_ISS: 'grubchain'
+              GRUBCHAIN_AUD: 'tokenizer'
+              GRUBCHAIN_KID: 'gc-2025-key-1'
+              GRUBCHAIN_SCOPE: 'pan_handle:issue'
         depends_on:
             - redis
             - mailpit
@@ -57,6 +61,13 @@ services:
             VITE_STRIPE_PUBLISHABLE_KEY: '${STRIPE_PUBLIC_KEY}'
             VITE_FRONTEND_URL: '${FRONTEND_URL}'
             VITE_APP_NAME: '${APP_NAME}'
+            VITE_GRUBCHAIN_SECRET_KEY: '/bmckvvJs3vOXVhq0GrcjEg6eKRvmBsnALIXqL9A+Gs='
+            VITE_GRUBCHAIN_ISS: 'grubchain'
+            VITE_GRUBCHAIN_KID: 'gc-2025-key-1'
+            VITE_GRUBCHAIN_AUD: 'tokenizer'
+            VITE_GRUBCHAIN_SCOPE: 'pan_handle:issue'
+            VITE_GRUBCHAIN_BUSINESS_ID: 'M1tADs'
+            VITE_GRUBCHAIN_TOKENIZER_URL: 'https://staging-tokenizer.grubchain.xyz/'
         networks:
             - app
 

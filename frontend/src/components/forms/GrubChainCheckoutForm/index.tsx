@@ -14,7 +14,7 @@ import { formatCard, formatPhone, validateExpDate, validateCard, validateCvv, va
 import { Event } from "../../../types.ts";
 import "./GrubchainCheckoutForm.module.scss"
 import { Button } from "../../common/Button/index.tsx";
-import { gapi } from "../../../api/grubchainApiClient.tsx";
+import { gapi, clientSecretsApi, pskChargeCard, pskChargeCardData } from "../../../api/grubchainApiClient.tsx";
 import { getToken } from "../../../api/grubchainTokenizerApiClient.ts";
 import { orderClientPublic, orderClient } from "../../../api/order.client.ts";
 import { getConfig } from "../../../utilites/config.ts";
@@ -69,13 +69,20 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [otpCode, setOtpCode] = useState(" ");
   const [payerBirthday, setPayerBirthday] = useState(" ");
   const [txReference, setTxReference] = useState(" ");
+  const [enc, setEnc] = useState({});
 
   const allPaymentMethods = ["card", "bank", "USSD"]; //"transfer","kuda", 
 
   useEffect(() => {
-    console.log(order);
     const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
     setBusinessId(theBID);
+
+    orderClientPublic.getGrubchainJwtToken(eventId, orderShortId, "client_secrets")
+      .then((jwtToken) => clientSecretsApi({
+        jwt: jwtToken,
+        params: { "business_id": businessId, "expires_in": 60 }
+      }))
+      .then(response => setEnc(response))
 
     if (setSubmitHandler) {
       setSubmitHandler(() => handleSubmit);
@@ -159,13 +166,22 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
         let month = parseInt(cardExp.slice(0, 2), 10);
         let year = parseInt(cardExp.slice(2), 10);
+
+        return pskChargeCardData({
+          cardData: { "business_id": businessId, "card_number": cardNum.replace(/\s+/g, ""), "expiry_year": year, "expiry_month": month },
+          enc,
+          jwt: jwtToken
+        })
+      }).then(({ jwtToken, enc, encryptedData }) => {
         getToken(
           jwtToken,
-          { "card_number": cardNum.replace(/\s+/g, ""), "expiry_year": year, "expiry_month": month }
+          enc,
+          encryptedData,
+          businessId
         ).then(response => {
           setPaymentToken(response.token);
           setBusinessId(response.business_id);
-          gapi.post('api/v1/psk/purchase/card', {
+          gapi('psk/purchase/card', {
             "token": paymentToken,
             "amount": order.total_gross * 100,
             "email": order.email,

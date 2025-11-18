@@ -419,7 +419,7 @@ $router->prefix('/public')->group(
         $router->get('/events/{event_id}/order/{order_short_id}/stripe/payment_intent', GetPaymentIntentActionPublic::class);
 
         // grubchain
-        $router->get('/events/{event_id}/order/{order_short_id}/grubchain/jwt', CreatePaymentIntentActionPublicJwt::class);
+        $router->get('/events/{event_id}/order/{order_short_id}/grubchain/jwt/{intent}', CreatePaymentIntentActionPublicJwt::class);
         //  payment done, just mark the order
         $router->post('/events/{event_id}/order/{order_short_id}/jwt/{jwt}', CompleteGrubchainOrderActionPublic::class);
 

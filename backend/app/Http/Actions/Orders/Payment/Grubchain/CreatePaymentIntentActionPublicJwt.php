@@ -11,11 +11,11 @@ use Illuminate\Support\Facades\File;
 
 class CreatePaymentIntentActionPublicJwt extends BaseAction
 {
-    public function __invoke(): JsonResponse
+    public function __invoke(int $eventId, string $orderShortId, string $intent): JsonResponse
     {
         $jwtToken = '';
         $keyId = config('custom.GRUBCHAIN_KID');
-        $scope = config('custom.GRUBCHAIN_SCOPE');
+        $scope = $intent == "client_secrets" ? "tokenize:card" : config('custom.GRUBCHAIN_SCOPE');
         $iss = config('custom.GRUBCHAIN_ISS');
         $aud = config('custom.GRUBCHAIN_AUD');
 
