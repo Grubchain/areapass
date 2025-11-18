@@ -181,7 +181,8 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         ).then(response => {
           setPaymentToken(response.token);
           setBusinessId(response.business_id);
-          gapi('psk/purchase/card', {
+
+          const body = {
             "token": paymentToken,
             "amount": order.total_gross * 100,
             "email": order.email,
@@ -190,16 +191,26 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             "agree_to_terms": agreeToTerms,
             "allow_promotions": allowEmails,
             "notify_crypto": notifyCryptoAvailable
-          }).then(response => {
-            // if success, areapass order is complete
-            const products = order.attendees;
-            const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
-            if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-              window.location = `/checkout/${eventId}/${orderShortId}/summary`
-            } else {
-              setCheckoutState("ERROR");
-            }
-          });
+          }
+
+          const payload = {
+            raw_body: body,
+            method: "POST",
+            url: "api/v1/psk/purchase/card",
+          }
+
+          orderClientPublic.getGrubchainHeaders(eventId, orderShortId, payload)
+            .then(({ headers, payload }) => pskChargeCard(headers, payload))
+            .then(response => {
+              // if success, areapass order is complete
+              const products = order.attendees;
+              const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
+              if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
+                window.location = `/checkout/${eventId}/${orderShortId}/summary`
+              } else {
+                setCheckoutState("ERROR");
+              }
+            });
         });
       });
     } catch (error) {
