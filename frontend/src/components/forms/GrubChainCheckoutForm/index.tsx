@@ -179,11 +179,11 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           encryptedData,
           businessId
         ).then(response => {
-          setPaymentToken(response.token);
+          setPaymentToken(response.data.token);
           setBusinessId(response.business_id);
 
           const body = {
-            "token": paymentToken,
+            "token": response.data.token,
             "amount": order.total_gross * 100,
             "email": order.email,
             "cvv": cardCvv,

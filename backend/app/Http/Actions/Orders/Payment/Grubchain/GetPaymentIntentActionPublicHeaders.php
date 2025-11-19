@@ -4,12 +4,19 @@ namespace HiEvents\Http\Actions\Orders\Payment\Grubchain;
 
 use HiEvents\Http\Actions\BaseAction;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\File;
+use Psr\Log\LoggerInterface;
 
 class GetPaymentIntentActionPublicHeaders extends BaseAction
 {
-    public function __invoke(string $method, string $url, string $rawBody): JsonResponse
+    public function __construct(
+        private readonly LoggerInterface       $logger,
+    )
+    {
+    }
+    public function __invoke(Request $request): JsonResponse
     {
         $kid = config('custom.GRUBCHAIN_KID');
         $base64Secret = config('custom.GRUBCHAIN_HMAC_SECRET');
@@ -23,6 +30,11 @@ class GetPaymentIntentActionPublicHeaders extends BaseAction
         $nonce = bin2hex(random_bytes(16));       // 16 bytes → 32-char hex
 
         // === 3) Body Digest ===
+        $tempRawBody = $request->json()->all();
+        $rawBody = json_encode($tempRawBody["raw_body"]);
+        $method = $tempRawBody["method"];
+        $url = $tempRawBody["url"];
+
         $shaHex = hash('sha256', $rawBody);
         $bodyDigest = 'sha256=' . $shaHex;
 
