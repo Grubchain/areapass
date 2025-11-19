@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { InputGroup } from "../../common/InputGroup";
 import { t } from "@lingui/macro";
-import { Alert, Skeleton, Radio, Text, Checkbox, Group, TextInput, Stack } from "@mantine/core";
+import { Alert, Skeleton, Radio, Text, Checkbox, Group, TextInput, Stack, NativeSelect } from "@mantine/core";
 import { LoadingMask } from "../../common/LoadingMask";
 import { DateTimePicker } from "@mantine/dates";
 import { useGetOrderPublic } from "../../../queries/useGetOrderPublic.ts";
@@ -18,6 +18,7 @@ import { gapi, clientSecretsApi, pskChargeCard, pskChargeCardData } from "../../
 import { getToken } from "../../../api/grubchainTokenizerApiClient.ts";
 import { orderClientPublic, orderClient } from "../../../api/order.client.ts";
 import { getConfig } from "../../../utilites/config.ts";
+import banks from "../../../utilites/nigerian-banks.json";
 
 export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   setSubmitHandler: (submitHandler: () => () => Promise<void>) => void
@@ -30,9 +31,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [checkoutState, setCheckoutState] = useState("");
 
-  const [agreeToTerms, setAgreeToTerms] = useState(Boolean);
-  const [notifyCryptoAvailable, setNotifyCryptoAvailable] = useState(Boolean);
-  const [allowEmails, setAllowEmails] = useState(Boolean);
+  const [agreeToTerms, setAgreeToTerms] = useState(true);
+  const [notifyCryptoAvailable, setNotifyCryptoAvailable] = useState(false);
+  const [allowEmails, setAllowEmails] = useState(true);
 
   const [paymentToken, setPaymentToken] = useState("");
   const [businessId, setBusinessId] = useState("");
@@ -44,6 +45,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [payWithBankAmount, setPayWithBankAmount] = useState("");
   const [payWithBankAccount, setPayWithBankAccount] = useState("");
   const [payWithBankCode, setPayWithBankCode] = useState("");
+  const [payWithBankName, setPayWithBankName] = useState("");
 
   const [payWithKudaAccount, setPayWithKudaAccount] = useState("");
   const [payWithKudaCode, setPayWithKudaCode] = useState("");
@@ -72,7 +74,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [enc, setEnc] = useState({});
 
   const allPaymentMethods = ["card", "bank"]; //"transfer", "USSD","kuda", 
-
+  const allBanks = banks.data;
   useEffect(() => {
     const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
     setBusinessId(theBID);
@@ -82,7 +84,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         jwt: jwtToken,
         params: { "business_id": businessId, "expires_in": 60 }
       }))
-      .then(response => setEnc(response))
+      .then((response) => { setEnc(response) })
 
     if (setSubmitHandler) {
       setSubmitHandler(() => handleSubmit);
@@ -157,6 +159,12 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   const resetTheCheckoutState = () => {
     setCheckoutState("");
+    setPayWithBankAccount("");
+    setPayWithBankCode("");
+    setCardExp("");
+    setCardNum("")
+    setBankAccountCodeErr("Invalid Bank");
+    setBankAccountNumErr("Invalid Bank Account");
   }
 
   //  pay APIs
@@ -368,7 +376,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
           const products = order.attendees;
           if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-          const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
+            const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
             navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
           } else {
             setCheckoutState("ERROR");
@@ -572,6 +580,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                   className="checkAgree" />
                 <Checkbox
                   name="allowEmail"
+                  defaultChecked
                   color="#000"
                   onChange={(e: any) => setAllowEmails(e.currentTarget.checked)}
                   label="Allow Areapass to send me promotional emails"
@@ -779,12 +788,15 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               onChange={(e) => { setPayWithBankAccount(e.currentTarget.value); validateBankAccountNum(e.currentTarget.value); }}
               error={bankAccountNumError}
             />
-            <TextInput
+            <NativeSelect
               withAsterisk
-              maxLength={6}
               label={t`Bank Code`}
-              placeholder={t`Bank Code`}
-              onChange={(e) => { setPayWithBankCode(e.currentTarget.value); validateBankCodeNum(e.currentTarget.value); }}
+              data={allBanks}
+              onChange={(e) => { 
+                setPayWithBankCode(e.currentTarget.value); 
+                setPayWithBankName(e.currentTarget.options[e.currentTarget.selectedIndex].text); 
+                validateBankCodeNum(e.currentTarget.value); 
+              }}
               error={bankAccountCodeErr}
             />
           </InputGroup>
@@ -822,6 +834,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <Card>
           <h3>Confirm bank details</h3>
           <InputGroup>
+            <span className={"card-detail-label"}>Bank Name</span><Text>{payWithBankName}</Text>
+          </InputGroup>
+          <InputGroup>
             <span className={"card-detail-label"}>Bank Account</span><Text>{payWithBankAccount}</Text>
           </InputGroup>
           <InputGroup>
@@ -843,7 +858,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             size="md"
             color="#0e0cff"
             variant="filled"
-            onClick={payBank}
+            onClick={() => { payBank(); }}
             className={"checkout"}>
             {t`Checkout`}
           </Button>
