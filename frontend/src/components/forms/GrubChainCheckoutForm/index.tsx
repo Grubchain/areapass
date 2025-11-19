@@ -4,7 +4,7 @@ import { InputGroup } from "../../common/InputGroup";
 import { t } from "@lingui/macro";
 import { Alert, Skeleton, Radio, Text, Checkbox, Group, TextInput, Stack, NativeSelect } from "@mantine/core";
 import { LoadingMask } from "../../common/LoadingMask";
-import { DateTimePicker } from "@mantine/dates";
+import { DatePicker } from "@mantine/dates";
 import { useGetOrderPublic } from "../../../queries/useGetOrderPublic.ts";
 import { Card } from "../../common/Card";
 import { CheckoutContent } from "../../layouts/Checkout/CheckoutContent";
@@ -78,7 +78,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   useEffect(() => {
     const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
     setBusinessId(theBID);
-
+    setTxReference(orderShortId);
     orderClientPublic.getGrubchainJwtToken(eventId, orderShortId, "client_secrets")
       .then((jwtToken) => clientSecretsApi({
         jwt: jwtToken,
@@ -174,7 +174,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
         let month = parseInt(cardExp.slice(0, 2), 10);
         let year = parseInt(cardExp.slice(2), 10);
-
+        console.log("JWT : "+jwtToken);
         return pskChargeCardData({
           cardData: { "business_id": businessId, "card_number": cardNum.replace(/\s+/g, ""), "expiry_year": year, "expiry_month": month },
           enc,
@@ -457,7 +457,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={() => { sendOtp(otpCode, txReference); }}
+              onClick={() => { sendOtp(otpCode, orderShortId); }}
               className={"checkout"}>
               {t`Next`}
             </Button>
@@ -477,7 +477,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
         <LoadingMask />
         <Card>
-          <DateTimePicker
+          <DatePicker
             label={t`Birthday`}
             required
             size="md"
@@ -501,7 +501,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={() => { sendBirthday(payerBirthday, txReference); }}
+              onClick={() => { sendBirthday(payerBirthday, orderShortId); }}
               className={"checkout"}>
               {t`Next`}
             </Button>
@@ -590,7 +590,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               <Group spacing="lg" m="10px" justify="space-between">
                 <Button
                   size="md"
-                  onClick={() => { eventHomepageUrl(event) }}
+                  onClick={() => { eventHomepageUrl(event); }}
                   variant="outline"
                   className={"cancel"}>
                   {t`Cancel`}
@@ -599,7 +599,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                   size="md"
                   color="#0e0cff"
                   variant="filled"
-                  onClick={setTheCheckoutState}
+                  onClick={()=> {    setCheckoutState("birthday");return;setTheCheckoutState();}}
                   className={"checkout"}>
                   {t`Next`}
                 </Button>
@@ -1060,7 +1060,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={() => { finishTx(txReference); }}
+              onClick={() => { finishTx(orderShortId); }}
               className={"checkout"}>
               {t`I completed my payment.`}
             </Button>
