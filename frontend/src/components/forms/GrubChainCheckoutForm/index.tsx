@@ -599,7 +599,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                   size="md"
                   color="#0e0cff"
                   variant="filled"
-                  onClick={()=> {    setCheckoutState("birthday");return;setTheCheckoutState();}}
+                  onClick={()=> { setTheCheckoutState();}}
                   className={"checkout"}>
                   {t`Next`}
                 </Button>
