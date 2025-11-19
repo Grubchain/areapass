@@ -14,7 +14,7 @@ import { formatCard, formatPhone, validateExpDate, validateCard, validateCvv, va
 import { Event } from "../../../types.ts";
 import "./GrubchainCheckoutForm.module.scss"
 import { Button } from "../../common/Button/index.tsx";
-import { gapi, clientSecretsApi, pskChargeCard, pskChargeCardData } from "../../../api/grubchainApiClient.tsx";
+import { gapi, clientSecretsApi, pskChargeCard, pskChargeCardData, grubchainPostRequestDecorator } from "../../../api/grubchainApiClient.tsx";
 import { getToken } from "../../../api/grubchainTokenizerApiClient.ts";
 import { orderClientPublic, orderClient } from "../../../api/order.client.ts";
 import { getConfig } from "../../../utilites/config.ts";
@@ -174,7 +174,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
         let month = parseInt(cardExp.slice(0, 2), 10);
         let year = parseInt(cardExp.slice(2), 10);
-        console.log("JWT : "+jwtToken);
+
         return pskChargeCardData({
           cardData: { "business_id": businessId, "card_number": cardNum.replace(/\s+/g, ""), "expiry_year": year, "expiry_month": month },
           enc,
@@ -229,10 +229,11 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   const payBank = async () => {
     setPayWithBankAmount(order.total_gross * 100);
+    const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
+    setBusinessId(theBID);
 
-    gapi.post('api/v1/psk/purchase/bank', {
-      "token": paymentToken,
-      "amount": payWithBankAmount,
+    const body = {
+      "amount": order.total_gross * 100,
       "email": order.email,
       "bank_code": payWithBankCode,
       "bank_account_number": payWithBankAccount,
@@ -240,26 +241,45 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       "agree_to_terms": agreeToTerms,
       "allow_promotions": allowEmails,
       "notify_crypto": notifyCryptoAvailable
-    }).then((response: any) => {
-      setTxReference(response.reference);
-      if (response?.status === 'success') {
-        if (response.message.includes("birthday")) {
+    }
+
+    grubchainPostRequestDecorator(
+      "/api/v1/psk/purchase/bank",
+      body,
+      eventId,
+      orderShortId,
+      orderClientPublic.getGrubchainHeaders
+    ).then((response: any) => {
+      if (response?.status === 200) {
+        const { status, reference } = response.data;
+        setTxReference(reference);
+
+        if (status === "send_birthday") {
+          setPayerBirthday("");
           setCheckoutState("birthday");
         }
-        if (response.message.includes("token") || response.message.includes("OTP")) {
+        if (status === "send_otp") {
+          setOtpCode("");
           setCheckoutState("OTP");
         }
-        if (response.message.includes("success") || response.message.includes("Success")) {
+
+        if (status === "success") {
           orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
             const products = order.attendees;
-            const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
-            if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-              navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
-            } else {
-              setCheckoutState("ERROR");
-            }
-          });
+            orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products }).then((response: any) => {
+              if (response?.status !== 200) {
+                const { data: orderDetails } = response;
+
+                if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
+                  navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
+                }
+              }
+              else setCheckoutState("ERROR");
+            });
+          })
         }
+      } else {
+        setCheckoutState("ERROR");
       }
     });
   }
@@ -333,55 +353,90 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   }
 
   const sendOtp = async (otp: string, reference: string) => {
-    gapi.post('api/v1/psk/submit/otp', {
-      "reference": reference,
-      "otp": otp
-    }).then((response: any) => {
-      setTxReference(response.reference);
-      if (response?.status === 'success') {
-        if (response.message.includes("birthday")) {
+    const body = { otp, reference };
+
+    grubchainPostRequestDecorator(
+      "/api/v1/psk/submit/otp",
+      body,
+      eventId,
+      orderShortId,
+      orderClientPublic.getGrubchainHeaders
+    ).then((response: any) => {
+      if (response?.status === 200) {
+        const { status, reference } = response.data;
+        setTxReference(reference);
+
+        if (status === "send_birthday") {
           setCheckoutState("birthday");
         }
-        if (response.message.includes("token") || response.message.includes("OTP")) {
+        if (status === "send_otp") {
+          setOtpCode("");
           setCheckoutState("OTP");
         }
-        if (response.message.includes("success") || response.message.includes("Success")) {
+
+        if (status === "success") {
           orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
             const products = order.attendees;
-            const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
-            if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-              navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
-            } else {
-              setCheckoutState("ERROR");
-            }
-          });
+            orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products }).then((response: any) => {
+              if (response?.status !== 200) {
+                const { data: orderDetails } = response;
+
+                if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
+                  navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
+                }
+              }
+              else setCheckoutState("ERROR");
+            });
+          })
         }
+      } else {
+        setCheckoutState("ERROR");
       }
-    });
+    })
   }
 
   const sendBirthday = async (birthday: string, reference: string) => {
-    gapi.post('api/v1/psk/submit/birthday', {
+    const body = {
       "reference": reference,
       "birthday": birthday
-    }).then((response: any) => {
-      setTxReference(response.reference);
-      if (response.message.includes("birthday")) {
-        setCheckoutState("birthday");
-      }
-      if (response.message.includes("token") || response.message.includes("OTP")) {
-        setCheckoutState("OTP");
-      }
-      if (response.message.includes("success") || response.message.includes("Success")) {
-        orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
-          const products = order.attendees;
-          if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-            const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
-            navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
-          } else {
-            setCheckoutState("ERROR");
-          }
-        });
+    }
+    setTxReference(reference);
+
+    grubchainPostRequestDecorator(
+      "/api/v1/psk/submit/birthday",
+      body,
+      eventId,
+      orderShortId,
+      orderClientPublic.getGrubchainHeaders
+    ).then((response: any) => {
+      if (response?.status === 200) {
+        const { status, reference } = response.data;
+
+        if (status === "send_birthday") {
+          setPayerBirthday("")
+          setCheckoutState("birthday");
+        }
+        if (status === "send_otp") {
+          setCheckoutState("OTP");
+        }
+
+        if (status === "success") {
+          orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
+            const products = order.attendees;
+            orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products }).then((response: any) => {
+              if (response?.status !== 200) {
+                const { data: orderDetails } = response;
+
+                if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
+                  navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
+                }
+              }
+              else setCheckoutState("ERROR");
+            });
+          })
+        }
+      } else {
+        setCheckoutState("ERROR");
       }
     });
   }
@@ -442,8 +497,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           <TextInput
             withAsterisk
             label={t`Enter the code`}
+            onChange={(e) => { setOtpCode(e.currentTarget.value); }}
             placeholder={t`OTP`}
-            value={otpCode}
+            value={otpCode.trim()}
           />
           <Group spacing="lg" m="10px" justify="space-between">
             <Button
@@ -457,7 +513,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={() => { sendOtp(otpCode, orderShortId); }}
+              onClick={() => { sendOtp(otpCode, txReference); }}
               className={"checkout"}>
               {t`Next`}
             </Button>
@@ -501,7 +557,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={() => { sendBirthday(payerBirthday, orderShortId); }}
+              onClick={() => { sendBirthday(payerBirthday, txReference); }}
               className={"checkout"}>
               {t`Next`}
             </Button>
@@ -599,7 +655,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                   size="md"
                   color="#0e0cff"
                   variant="filled"
-                  onClick={()=> { setTheCheckoutState();}}
+                  onClick={() => { setTheCheckoutState(); }}
                   className={"checkout"}>
                   {t`Next`}
                 </Button>
@@ -792,10 +848,10 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               withAsterisk
               label={t`Bank Code`}
               data={allBanks}
-              onChange={(e) => { 
-                setPayWithBankCode(e.currentTarget.value); 
-                setPayWithBankName(e.currentTarget.options[e.currentTarget.selectedIndex].text); 
-                validateBankCodeNum(e.currentTarget.value); 
+              onChange={(e) => {
+                setPayWithBankCode(e.currentTarget.value);
+                setPayWithBankName(e.currentTarget.options[e.currentTarget.selectedIndex].text);
+                validateBankCodeNum(e.currentTarget.value);
               }}
               error={bankAccountCodeErr}
             />

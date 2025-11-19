@@ -43,3 +43,18 @@ export const pskChargeCard = async (headers: any, payload: any) => {
 
   return gapi.post("psk/purchase/card", payload);
 }
+
+export const grubchainPostRequestDecorator = async (path, body, eventId, orderShortId, headerCallback = async () => { }) => {
+  const payload = {
+    raw_body: body,
+    method: "POST",
+    url: path,
+  }
+
+  return headerCallback(eventId, orderShortId, payload)
+    .then(({ headers, payload }) => {
+      gapi.defaults.headers.common = { ...gapi.defaults.headers.common, ...headers };
+
+      return gapi.post(path, payload)
+    })
+}
