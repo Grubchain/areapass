@@ -71,7 +71,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [txReference, setTxReference] = useState(" ");
   const [enc, setEnc] = useState({});
 
-  const allPaymentMethods = ["card", "bank", "USSD"]; //"transfer","kuda", 
+  const allPaymentMethods = ["card", "bank"]; //"transfer", "USSD","kuda", 
 
   useEffect(() => {
     const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
@@ -207,7 +207,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               return orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
             }).then(({ data: orderDetails }) => {
               if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-                window.location = `/checkout/${eventId}/${orderShortId}/summary`
+                navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
               } else {
                 setCheckoutState("ERROR");
               }
@@ -246,7 +246,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             const products = order.attendees;
             const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
             if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-              window.location = `/checkout/${eventId}/${orderShortId}/summary`;
+              navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
             } else {
               setCheckoutState("ERROR");
             }
@@ -315,7 +315,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           const products = order.attendees;
           const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
           if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-            window.location = `/checkout/${eventId}/${orderShortId}/summary`
+            navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
           } else {
             setCheckoutState("ERROR");
           }
@@ -342,7 +342,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             const products = order.attendees;
             const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
             if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-              window.location = `/checkout/${eventId}/${orderShortId}/summary`;
+              navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
             } else {
               setCheckoutState("ERROR");
             }
@@ -367,9 +367,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       if (response.message.includes("success") || response.message.includes("Success")) {
         orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
           const products = order.attendees;
-          const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
           if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-            window.location = `/checkout/${eventId}/${orderShortId}/summary`;
+          const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
+            navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
           } else {
             setCheckoutState("ERROR");
           }
@@ -526,78 +526,79 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <form className="checkout-form">
           <h2>{t`Checkout`}</h2>
 
-          <h4>Pay with</h4>
+          <Card>
+            <Stack className="payment-options">
+              <Stack gap="lg" m="15px">
+                {allPaymentMethods.map((method) => (
+                  <Radio
+                    key={method}
+                    className="payment-option"
+                    color="#000000"
+                    name="payment"
+                    value={method}
+                    checked={paymentMethod === method}
+                    onChange={() => setPaymentMethod(method)}
+                    label={'Pay with ' + method.charAt(0).toUpperCase() + method.slice(1)}
+                  />
+                ))}
+              </Stack>
+              <Stack
+                pl="22px"
+                mb="20px"
+                bg="#F4EBFF"
+                radius="lg"
+              >
+                <Text>
+                  Pay With Crypto &nbsp;&rarr; <strong>Coming Soon</strong>
+                </Text>
+                <Checkbox
+                  m="7px"
+                  color="#000"
+                  name="notifyMe"
+                  onChange={(e: any) => setNotifyCryptoAvailable(e.currentTarget.checked)}
+                  label="Notify me when crypto payments are available"
+                  className="notify" />
+              </Stack>
+            </Stack>
 
-          <Stack className="payment-options">
             <Stack gap="lg" m="15px">
-              {allPaymentMethods.map((method) => (
-                <Radio
-                  key={method}
-                  className="payment-option"
-                  color="#000000"
-                  name="payment"
-                  value={method}
-                  checked={paymentMethod === method}
-                  onChange={() => setPaymentMethod(method)}
-                  label={'Pay with ' + method.charAt(0).toUpperCase() + method.slice(1)}
-                />
-              ))}
-            </Stack>
-            <Stack
-              pl="22px"
-              mb="20px"
-              bg="#F4EBFF"
-              radius="xl"
-            >
-              <Text>
-                Pay With Crypto &nbsp;&rarr; <strong>Coming Soon</strong>
-              </Text>
-              <Checkbox
-                m="7px"
-                color="#000"
-                name="notifyMe"
-                onChange={(e: any) => setNotifyCryptoAvailable(e.currentTarget.checked)}
-                label="Notify me when crypto payments are available"
-                className="notify" />
-            </Stack>
-          </Stack>
-          <Stack gap="lg" m="15px">
-            <Stack className="agreements">
-              <Checkbox
-                color="#000"
-                defaultChecked
-                name="agree"
-                onChange={(e: any) => setAgreeToTerms(e.currentTarget.checked)}
-                label="I agree to the Areapass's terms and conditions"
-                className="checkAgree" />
-              <Checkbox
-                name="allowEmail"
-                color="#000"
-                onChange={(e: any) => setAllowEmails(e.currentTarget.checked)}
-                label="Allow Areapass to send me promotional emails"
-                className="checkAllow" />
-            </Stack>
+              <Stack className="agreements">
+                <Checkbox
+                  color="#000"
+                  defaultChecked
+                  name="agree"
+                  onChange={(e: any) => setAgreeToTerms(e.currentTarget.checked)}
+                  label="I agree to the Areapass's terms and conditions"
+                  className="checkAgree" />
+                <Checkbox
+                  name="allowEmail"
+                  color="#000"
+                  onChange={(e: any) => setAllowEmails(e.currentTarget.checked)}
+                  label="Allow Areapass to send me promotional emails"
+                  className="checkAllow" />
+              </Stack>
 
-            <Group spacing="lg" m="10px" justify="space-between">
-              <Button
-                size="md"
-                onClick={() => { eventHomepageUrl(event) }}
-                variant="outline"
-                className={"cancel"}>
-                {t`Cancel`}
-              </Button>
-              <Button
-                size="md"
-                color="#0e0cff"
-                variant="filled"
-                onClick={setTheCheckoutState}
-                className={"checkout"}>
-                {t`Next`}
-              </Button>
-            </Group>
-          </Stack>
+              <Group spacing="lg" m="10px" justify="space-between">
+                <Button
+                  size="md"
+                  onClick={() => { eventHomepageUrl(event) }}
+                  variant="outline"
+                  className={"cancel"}>
+                  {t`Cancel`}
+                </Button>
+                <Button
+                  size="md"
+                  color="#0e0cff"
+                  variant="filled"
+                  onClick={setTheCheckoutState}
+                  className={"checkout"}>
+                  {t`Next`}
+                </Button>
+              </Group>
+            </Stack>
+          </Card>
         </form>
-      </div>
+      </div >
     );
   }
 
