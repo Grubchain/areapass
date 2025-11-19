@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { InputGroup } from "../../common/InputGroup";
 import { t } from "@lingui/macro";
-import { Alert, Skeleton, Radio, Text, Checkbox, Group, TextInput, Stack } from "@mantine/core";
+import { Alert, Skeleton, Radio, Text, Checkbox, Group, TextInput, Stack, NativeSelect } from "@mantine/core";
 import { LoadingMask } from "../../common/LoadingMask";
-import { DateTimePicker } from "@mantine/dates";
+import { DatePicker } from "@mantine/dates";
 import { useGetOrderPublic } from "../../../queries/useGetOrderPublic.ts";
 import { Card } from "../../common/Card";
 import { CheckoutContent } from "../../layouts/Checkout/CheckoutContent";
@@ -18,6 +18,7 @@ import { gapi, clientSecretsApi, pskChargeCard, pskChargeCardData } from "../../
 import { getToken } from "../../../api/grubchainTokenizerApiClient.ts";
 import { orderClientPublic, orderClient } from "../../../api/order.client.ts";
 import { getConfig } from "../../../utilites/config.ts";
+import banks from "../../../utilites/nigerian-banks.json";
 
 export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   setSubmitHandler: (submitHandler: () => () => Promise<void>) => void
@@ -30,9 +31,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [checkoutState, setCheckoutState] = useState("");
 
-  const [agreeToTerms, setAgreeToTerms] = useState(Boolean);
-  const [notifyCryptoAvailable, setNotifyCryptoAvailable] = useState(Boolean);
-  const [allowEmails, setAllowEmails] = useState(Boolean);
+  const [agreeToTerms, setAgreeToTerms] = useState(true);
+  const [notifyCryptoAvailable, setNotifyCryptoAvailable] = useState(false);
+  const [allowEmails, setAllowEmails] = useState(true);
 
   const [paymentToken, setPaymentToken] = useState("");
   const [businessId, setBusinessId] = useState("");
@@ -44,6 +45,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [payWithBankAmount, setPayWithBankAmount] = useState("");
   const [payWithBankAccount, setPayWithBankAccount] = useState("");
   const [payWithBankCode, setPayWithBankCode] = useState("");
+  const [payWithBankName, setPayWithBankName] = useState("");
 
   const [payWithKudaAccount, setPayWithKudaAccount] = useState("");
   const [payWithKudaCode, setPayWithKudaCode] = useState("");
@@ -71,18 +73,18 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [txReference, setTxReference] = useState(" ");
   const [enc, setEnc] = useState({});
 
-  const allPaymentMethods = ["card", "bank", "USSD"]; //"transfer","kuda", 
-
+  const allPaymentMethods = ["card", "bank"]; //"transfer", "USSD","kuda", 
+  const allBanks = banks.data;
   useEffect(() => {
     const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
     setBusinessId(theBID);
-
+    setTxReference(orderShortId);
     orderClientPublic.getGrubchainJwtToken(eventId, orderShortId, "client_secrets")
       .then((jwtToken) => clientSecretsApi({
         jwt: jwtToken,
         params: { "business_id": businessId, "expires_in": 60 }
       }))
-      .then(response => setEnc(response))
+      .then((response) => { setEnc(response) })
 
     if (setSubmitHandler) {
       setSubmitHandler(() => handleSubmit);
@@ -157,6 +159,12 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   const resetTheCheckoutState = () => {
     setCheckoutState("");
+    setPayWithBankAccount("");
+    setPayWithBankCode("");
+    setCardExp("");
+    setCardNum("")
+    setBankAccountCodeErr("Invalid Bank");
+    setBankAccountNumErr("Invalid Bank Account");
   }
 
   //  pay APIs
@@ -166,7 +174,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
         let month = parseInt(cardExp.slice(0, 2), 10);
         let year = parseInt(cardExp.slice(2), 10);
-
+        console.log("JWT : "+jwtToken);
         return pskChargeCardData({
           cardData: { "business_id": businessId, "card_number": cardNum.replace(/\s+/g, ""), "expiry_year": year, "expiry_month": month },
           enc,
@@ -207,7 +215,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               return orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
             }).then(({ data: orderDetails }) => {
               if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-                window.location = `/checkout/${eventId}/${orderShortId}/summary`
+                navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
               } else {
                 setCheckoutState("ERROR");
               }
@@ -246,7 +254,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             const products = order.attendees;
             const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
             if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-              window.location = `/checkout/${eventId}/${orderShortId}/summary`;
+              navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
             } else {
               setCheckoutState("ERROR");
             }
@@ -315,7 +323,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           const products = order.attendees;
           const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
           if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-            window.location = `/checkout/${eventId}/${orderShortId}/summary`
+            navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
           } else {
             setCheckoutState("ERROR");
           }
@@ -342,7 +350,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             const products = order.attendees;
             const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
             if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-              window.location = `/checkout/${eventId}/${orderShortId}/summary`;
+              navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
             } else {
               setCheckoutState("ERROR");
             }
@@ -367,9 +375,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       if (response.message.includes("success") || response.message.includes("Success")) {
         orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
           const products = order.attendees;
-          const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
           if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-            window.location = `/checkout/${eventId}/${orderShortId}/summary`;
+            const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
+            navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
           } else {
             setCheckoutState("ERROR");
           }
@@ -449,7 +457,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={() => { sendOtp(otpCode, txReference); }}
+              onClick={() => { sendOtp(otpCode, orderShortId); }}
               className={"checkout"}>
               {t`Next`}
             </Button>
@@ -469,7 +477,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
         <LoadingMask />
         <Card>
-          <DateTimePicker
+          <DatePicker
             label={t`Birthday`}
             required
             size="md"
@@ -493,7 +501,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={() => { sendBirthday(payerBirthday, txReference); }}
+              onClick={() => { sendBirthday(payerBirthday, orderShortId); }}
               className={"checkout"}>
               {t`Next`}
             </Button>
@@ -526,78 +534,80 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <form className="checkout-form">
           <h2>{t`Checkout`}</h2>
 
-          <h4>Pay with</h4>
+          <Card>
+            <Stack className="payment-options">
+              <Stack gap="lg" m="15px">
+                {allPaymentMethods.map((method) => (
+                  <Radio
+                    key={method}
+                    className="payment-option"
+                    color="#000000"
+                    name="payment"
+                    value={method}
+                    checked={paymentMethod === method}
+                    onChange={() => setPaymentMethod(method)}
+                    label={'Pay with ' + method.charAt(0).toUpperCase() + method.slice(1)}
+                  />
+                ))}
+              </Stack>
+              <Stack
+                pl="22px"
+                mb="20px"
+                bg="#F4EBFF"
+                radius="lg"
+              >
+                <Text>
+                  Pay With Crypto &nbsp;&rarr; <strong>Coming Soon</strong>
+                </Text>
+                <Checkbox
+                  m="7px"
+                  color="#000"
+                  name="notifyMe"
+                  onChange={(e: any) => setNotifyCryptoAvailable(e.currentTarget.checked)}
+                  label="Notify me when crypto payments are available"
+                  className="notify" />
+              </Stack>
+            </Stack>
 
-          <Stack className="payment-options">
             <Stack gap="lg" m="15px">
-              {allPaymentMethods.map((method) => (
-                <Radio
-                  key={method}
-                  className="payment-option"
-                  color="#000000"
-                  name="payment"
-                  value={method}
-                  checked={paymentMethod === method}
-                  onChange={() => setPaymentMethod(method)}
-                  label={'Pay with ' + method.charAt(0).toUpperCase() + method.slice(1)}
-                />
-              ))}
-            </Stack>
-            <Stack
-              pl="22px"
-              mb="20px"
-              bg="#F4EBFF"
-              radius="xl"
-            >
-              <Text>
-                Pay With Crypto &nbsp;&rarr; <strong>Coming Soon</strong>
-              </Text>
-              <Checkbox
-                m="7px"
-                color="#000"
-                name="notifyMe"
-                onChange={(e: any) => setNotifyCryptoAvailable(e.currentTarget.checked)}
-                label="Notify me when crypto payments are available"
-                className="notify" />
-            </Stack>
-          </Stack>
-          <Stack gap="lg" m="15px">
-            <Stack className="agreements">
-              <Checkbox
-                color="#000"
-                defaultChecked
-                name="agree"
-                onChange={(e: any) => setAgreeToTerms(e.currentTarget.checked)}
-                label="I agree to the Areapass's terms and conditions"
-                className="checkAgree" />
-              <Checkbox
-                name="allowEmail"
-                color="#000"
-                onChange={(e: any) => setAllowEmails(e.currentTarget.checked)}
-                label="Allow Areapass to send me promotional emails"
-                className="checkAllow" />
-            </Stack>
+              <Stack className="agreements">
+                <Checkbox
+                  color="#000"
+                  defaultChecked
+                  name="agree"
+                  onChange={(e: any) => setAgreeToTerms(e.currentTarget.checked)}
+                  label="I agree to the Areapass's terms and conditions"
+                  className="checkAgree" />
+                <Checkbox
+                  name="allowEmail"
+                  defaultChecked
+                  color="#000"
+                  onChange={(e: any) => setAllowEmails(e.currentTarget.checked)}
+                  label="Allow Areapass to send me promotional emails"
+                  className="checkAllow" />
+              </Stack>
 
-            <Group spacing="lg" m="10px" justify="space-between">
-              <Button
-                size="md"
-                onClick={() => { eventHomepageUrl(event) }}
-                variant="outline"
-                className={"cancel"}>
-                {t`Cancel`}
-              </Button>
-              <Button
-                size="md"
-                color="#0e0cff"
-                variant="filled"
-                onClick={setTheCheckoutState}
-                className={"checkout"}>
-                {t`Next`}
-              </Button>
-            </Group>
-          </Stack>
+              <Group spacing="lg" m="10px" justify="space-between">
+                <Button
+                  size="md"
+                  onClick={() => { eventHomepageUrl(event); }}
+                  variant="outline"
+                  className={"cancel"}>
+                  {t`Cancel`}
+                </Button>
+                <Button
+                  size="md"
+                  color="#0e0cff"
+                  variant="filled"
+                  onClick={()=> { setTheCheckoutState();}}
+                  className={"checkout"}>
+                  {t`Next`}
+                </Button>
+              </Group>
+            </Stack>
+          </Card>
         </form>
-      </div>
+      </div >
     );
   }
 
@@ -778,12 +788,15 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               onChange={(e) => { setPayWithBankAccount(e.currentTarget.value); validateBankAccountNum(e.currentTarget.value); }}
               error={bankAccountNumError}
             />
-            <TextInput
+            <NativeSelect
               withAsterisk
-              maxLength={6}
               label={t`Bank Code`}
-              placeholder={t`Bank Code`}
-              onChange={(e) => { setPayWithBankCode(e.currentTarget.value); validateBankCodeNum(e.currentTarget.value); }}
+              data={allBanks}
+              onChange={(e) => { 
+                setPayWithBankCode(e.currentTarget.value); 
+                setPayWithBankName(e.currentTarget.options[e.currentTarget.selectedIndex].text); 
+                validateBankCodeNum(e.currentTarget.value); 
+              }}
               error={bankAccountCodeErr}
             />
           </InputGroup>
@@ -821,6 +834,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <Card>
           <h3>Confirm bank details</h3>
           <InputGroup>
+            <span className={"card-detail-label"}>Bank Name</span><Text>{payWithBankName}</Text>
+          </InputGroup>
+          <InputGroup>
             <span className={"card-detail-label"}>Bank Account</span><Text>{payWithBankAccount}</Text>
           </InputGroup>
           <InputGroup>
@@ -842,7 +858,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             size="md"
             color="#0e0cff"
             variant="filled"
-            onClick={payBank}
+            onClick={() => { payBank(); }}
             className={"checkout"}>
             {t`Checkout`}
           </Button>
@@ -1044,7 +1060,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               size="md"
               color="#0e0cff"
               variant="filled"
-              onClick={() => { finishTx(txReference); }}
+              onClick={() => { finishTx(orderShortId); }}
               className={"checkout"}>
               {t`I completed my payment.`}
             </Button>

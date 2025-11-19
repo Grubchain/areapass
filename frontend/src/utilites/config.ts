@@ -30,7 +30,9 @@ export const clientBuildEnv: { [K in ConfigKeys]: string } = {
   VITE_GRUBCHAIN_KID: import.meta.env.VITE_GRUBCHAIN_KID,
   VITE_GRUBCHAIN_AUD: import.meta.env.VITE_GRUBCHAIN_AUD,
   VITE_GRUBCHAIN_SCOPE: import.meta.env.VITE_GRUBCHAIN_SCOPE,
-  VITE_GRUBCHAIN_BUSINESS_ID: import.meta.env.VITE_GRUBCHAIN_BUSINESS_ID,  
+  VITE_GRUBCHAIN_BUSINESS_ID: import.meta.env.VITE_GRUBCHAIN_BUSINESS_ID,
+  VITE_GRUBCHAIN_TOS: import.meta.env.VITE_GRUBCHAIN_TOS,
+  VITE_GRUBCHAIN_PRIVACY: import.meta.env.VITE_GRUBCHAIN_PRIVACY,
 };
 
 export const getConfig = (
