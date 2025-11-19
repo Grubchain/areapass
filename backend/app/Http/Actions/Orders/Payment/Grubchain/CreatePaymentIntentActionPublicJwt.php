@@ -8,9 +8,16 @@ use Symfony\Component\HttpFoundation\Response;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Facades\File;
+use Psr\Log\LoggerInterface;
 
 class CreatePaymentIntentActionPublicJwt extends BaseAction
 {
+    public function __construct(
+        private readonly LoggerInterface       $logger,
+    )
+    {
+    }
+
     public function __invoke(int $eventId, string $orderShortId, string $intent): JsonResponse
     {
         $jwtToken = '';
@@ -21,7 +28,8 @@ class CreatePaymentIntentActionPublicJwt extends BaseAction
 
         try {
             $now = time();
-            $privateKey = File::get(config('custom.secret_pem'));
+            $rawPKey = config('custom.secret_pem');
+            $privateKey = str_replace('\\n', "\n", $rawPKey);
 
             $header = ['alg' => 'RS256', 'typ' => 'JWT'];
             if ($keyId) {
