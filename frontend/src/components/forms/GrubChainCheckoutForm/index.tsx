@@ -204,7 +204,8 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             .then(response => {
               // if success, areapass order is complete
               const products = order.attendees;
-              const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
+              return orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
+            }).then(({ data: orderDetails }) => {
               if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
                 window.location = `/checkout/${eventId}/${orderShortId}/summary`
               } else {
