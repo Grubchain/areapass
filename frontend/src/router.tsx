@@ -534,6 +534,14 @@ export const router: RouteObject[] = [
             return {Component: CheckIn.default};
         },
         errorElement: <ErrorPage/>,
+    },
+    {
+        path: "/check-in/:checkInListShortId/:unlockPass",
+        async lazy() {
+            const CheckIn = await import("./components/layouts/CheckIn");
+            return {Component: CheckIn.default};
+        },
+        errorElement: <ErrorPage/>,
     }
 ];
 

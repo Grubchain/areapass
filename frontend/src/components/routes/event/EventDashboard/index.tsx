@@ -47,9 +47,10 @@ export const EventDashboard = () => {
     const [isChecklistVisible, setIsChecklistVisible] = useState(true);
     const [isMounted, setIsMounted] = useState(false);
 
-    const showStripeUpgradeNotice = account?.stripe_platform === StripePlatform.Canada.valueOf()
-        && account?.stripe_connect_setup_complete
-        && isHiEvents();
+    const showStripeUpgradeNotice = false;
+        // account?.stripe_platform === StripePlatform.Canada.valueOf()
+        // && account?.stripe_connect_setup_complete
+        // && isHiEvents();
 
     useEffect(() => {
         setIsMounted(true);

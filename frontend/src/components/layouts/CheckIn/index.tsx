@@ -26,10 +26,11 @@ import {ScannerSelectionModal} from "../../common/CheckIn/ScannerSelectionModal"
 import {CheckInInfoModal} from "../../common/CheckIn/CheckInInfoModal";
 import {HidScannerStatus} from "../../common/CheckIn/HidScannerStatus";
 import {Button} from "@mantine/core";
+import { getConfig } from "../../../utilites/config.ts";
 
 const CheckIn = () => {
     const networkStatus = useNetwork();
-    const {checkInListShortId} = useParams();
+    const {checkInListShortId, unlockPass} = useParams();
     const CheckInListQuery = useGetCheckInListPublic(checkInListShortId);
     const checkInList = CheckInListQuery?.data?.data;
     const event = checkInList?.event;
@@ -41,6 +42,8 @@ const CheckIn = () => {
     const [hidScannerMode, setHidScannerMode] = useState(false);
     const [currentBarcode, setCurrentBarcode] = useState('');
     const [pageHasFocus, setPageHasFocus] = useState(true);
+    const [pageIsReadWrite, setPageIsReadWrite] = useState(false);
+
     const barcodeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isProcessingRef = useRef(false);
     const processedBarcodesRef = useRef<Set<string>>(new Set());
@@ -86,6 +89,7 @@ const CheckIn = () => {
 
     // Save sound preference to localStorage
     useEffect(() => {
+        setPageIsReadWrite(getConfig('VITE_CHECKINS_RW') == unlockPass);
         if (!isSsr()) {
             localStorage.setItem("scannerSoundOn", JSON.stringify(isSoundOn));
         }
@@ -438,10 +442,11 @@ const CheckIn = () => {
                             onClear={() => setSearchQuery('')}
                             placeholder={t`Search by name, order #, attendee # or email...`}
                         />
-                        <Button variant={'light'} size={'md'} className={classes.scanButton}
+
+                        {pageIsReadWrite && <Button variant={'light'} size={'md'} className={classes.scanButton}
                                 onClick={() => setScannerSelectionOpen(true)} leftSection={<IconQrcode/>}>
                             {t`Scan`}
-                        </Button>
+                        </Button>}
                         <ActionIcon 
                             aria-label={isSoundOn ? t`Turn sound off` : t`Turn sound on`} 
                             variant={'light'} 
@@ -461,6 +466,7 @@ const CheckIn = () => {
             <AttendeeList
                 attendees={attendees}
                 products={products}
+                canCheckin={pageIsReadWrite}
                 isLoading={attendeesQuery.isFetching}
                 isCheckInPending={checkInMutation.isPending}
                 isDeletePending={deleteCheckInMutation.isPending}

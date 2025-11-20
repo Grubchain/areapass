@@ -88,7 +88,7 @@ export const PoweredByFooter = (props: React.DetailedHTMLProps<React.HTMLAttribu
   return (
     <div {...props} className={classNames(classes.poweredBy, props.className)}>
       <div className={classes.poweredByText}>
-        {footerContent}
+        {/* {footerContent} */}
       </div>
     </div>
   );

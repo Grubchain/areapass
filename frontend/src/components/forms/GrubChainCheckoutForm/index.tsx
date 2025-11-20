@@ -73,18 +73,28 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [txReference, setTxReference] = useState(" ");
   const [enc, setEnc] = useState({});
 
+  const [tosLink, setTosLink] = useState("");
+  const [privacyLink, setPrivacyLink] = useState("");
+  const [cancelPolLink, setCancelPolLink] = useState("");
+
   const allPaymentMethods = ["card", "bank"]; //"transfer", "USSD","kuda", 
   const allBanks = banks.data;
   useEffect(() => {
     const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
     setBusinessId(theBID);
     setTxReference(orderShortId);
+    setCancelPolLink(getConfig('VITE_CANCELATION_URL'));
+    setTosLink(getConfig('VITE_GRUBCHAIN_TOS'));
+    setPrivacyLink(getConfig('VITE_GRUBCHAIN_PRIVACY'));
+
     orderClientPublic.getGrubchainJwtToken(eventId, orderShortId, "client_secrets")
-      .then((jwtToken) => clientSecretsApi({
-        jwt: jwtToken,
-        params: { "business_id": businessId, "expires_in": 600 }
-      }))
-      .then((response) => { setEnc(response) })
+      .then((jwtToken) => {
+        clientSecretsApi({
+          jwt: jwtToken,
+          params: { "business_id": theBID, "expires_in": 600 }
+        });
+      })
+      .then((response) => { setEnc(response) });
 
     if (setSubmitHandler) {
       setSubmitHandler(() => handleSubmit);
@@ -487,7 +497,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   //  checkout states
   if ((checkoutState === "OTP")) {
     return (
-      <form id="payment-otp-form">
+      <form
+        id="payment-otp-form"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+      >
         <h2>
           {t`OTP`}
         </h2>
@@ -526,7 +543,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   if ((checkoutState === "birthday")) {
     return (
-      <form id="payment-birthday-form">
+      <form id="payment-birthday-form"
+
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+      >
         <h2>
           {t`Enter your birthday`}
         </h2>
@@ -587,7 +611,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   if (checkoutState === '') {
     return (
       <div className="checkout-container">
-        <form className="checkout-form">
+        <form
+          className="checkout-form"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+            }
+          }}
+        >
           <h2>{t`Checkout`}</h2>
 
           <Card>
@@ -632,7 +663,20 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                   defaultChecked
                   name="agree"
                   onChange={(e: any) => setAgreeToTerms(e.currentTarget.checked)}
-                  label="I agree to the Areapass's terms and conditions"
+                  label={
+                    <>
+                      I agree to the{" "}
+                      <a href={tosLink} target="_blank" style={{ textDecoration: "underline", color: "blue" }}>
+                        Terms & Conditions
+                      </a>,{" "}
+                      <a href={privacyLink} target="_blank" style={{ textDecoration: "underline", color: "blue" }}>
+                        Privacy policy
+                      </a>{" "} and {" "}
+                      <a href={cancelPolLink} target="_blank" style={{ textDecoration: "underline", color: "blue" }}>
+                        Cancellation policy
+                      </a>
+                    </>
+                  }
                   className="checkAgree" />
                 <Checkbox
                   name="allowEmail"
@@ -646,7 +690,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               <Group spacing="lg" m="10px" justify="space-between">
                 <Button
                   size="md"
-                  onClick={() => { eventHomepageUrl(event); }}
+                  onClick={() => { navigate(eventHomepageUrl(event)); }}
                   variant="outline"
                   className={"cancel"}>
                   {t`Cancel`}
@@ -655,7 +699,11 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                   size="md"
                   color="#0e0cff"
                   variant="filled"
-                  onClick={() => { setTheCheckoutState(); }}
+                  onClick={() => {
+                    if (agreeToTerms) {
+                      setTheCheckoutState();
+                    }
+                  }}
                   className={"checkout"}>
                   {t`Next`}
                 </Button>
@@ -670,7 +718,15 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   //  card
   if (checkoutState === 'card') {
     return (
-      <form id="payment-form">
+      <form id="payment-form"
+
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+
+      >
         <h2>
           {t`Pay with Card`}
         </h2>
@@ -731,7 +787,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   if (checkoutState === 'cardConfirm') {
     return (
-      <form id="payment-form">
+      <form id="payment-form"
+
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+      >
         <h2>
           {t`Payment`}
         </h2>
@@ -778,7 +841,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   //  transfer
   if (checkoutState === 'transfer') {
     return (
-      <form id="payment-form">
+      <form id="payment-form"
+
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+      >
         <h2>
           {t`Payment by Transfer`}
         </h2>
@@ -828,7 +898,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   //  bank
   if (checkoutState === 'bank') {
     return (
-      <form id="payment-form">
+      <form id="payment-form"
+
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+      >
         <h2>
           {t`Pay with Bank`}
         </h2>
@@ -882,7 +959,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   if (checkoutState === 'bankConfirm') {
     return (
-      <form id="payment-form">
+      <form id="payment-form"
+
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+      >
         <h2>
           {t`Pay with Bank`}
         </h2>
@@ -926,7 +1010,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   //  Kuda
   if (checkoutState === 'kuda') {
     return (
-      <form id="payment-form">
+      <form id="payment-form"
+
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+      >
         <h2>
           {t`Pay with Kuda`}
         </h2>
@@ -997,7 +1088,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   if (checkoutState === 'kudaConfirm') {
     return (
-      <form id="payment-form">
+      <form id="payment-form"
+
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+      >
         <h2>
           {t`Pay with Kuda`}
         </h2>

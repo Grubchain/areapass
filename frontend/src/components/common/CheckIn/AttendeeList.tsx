@@ -10,6 +10,7 @@ interface AttendeeListProps {
     isLoading: boolean;
     isCheckInPending: boolean;
     isDeletePending: boolean;
+    canCheckin: boolean;
     allowOrdersAwaitingOfflinePaymentToCheckIn: boolean;
     onCheckInToggle: (attendee: Attendee) => void;
     onClickSound?: () => void;
@@ -21,6 +22,7 @@ export const AttendeeList = ({
                                  isLoading,
                                  isCheckInPending,
                                  isDeletePending,
+                                 canCheckin,
                                  allowOrdersAwaitingOfflinePaymentToCheckIn,
                                  onCheckInToggle,
                                  onClickSound
@@ -91,7 +93,7 @@ export const AttendeeList = ({
                             </div>
                         </div>
                         <div className={classes.actions}>
-                            <Button
+                            {canCheckin && <Button
                                 onClick={() => {
                                     onClickSound?.();
                                     onCheckInToggle(attendee);
@@ -101,7 +103,7 @@ export const AttendeeList = ({
                                 color={getButtonColor(attendee)}
                             >
                                 {checkInButtonText(attendee)}
-                            </Button>
+                            </Button>}
                         </div>
                     </div>
                 );

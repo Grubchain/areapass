@@ -141,7 +141,7 @@ const GettingStarted = () => {
                         </Button>
                     </Card>
 
-                    <Card className={account?.stripe_connect_setup_complete ? classes.completedCard : ''}>
+                    {/* <Card className={account?.stripe_connect_setup_complete ? classes.completedCard : ''}>
                         {account?.stripe_connect_setup_complete && <CompletedBadge/>}
                         <h2>
                             {t`💳 Connect with Stripe`}
@@ -154,7 +154,7 @@ const GettingStarted = () => {
                                 {t`Connect with Stripe`}
                             </Button>)
                         }
-                    </Card>
+                    </Card> */}
 
                     <Card className={hasImages ? classes.completedCard : ''}>
                         {hasImages && <CompletedBadge/>}
