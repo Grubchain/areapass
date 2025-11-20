@@ -21,7 +21,7 @@ class CreatePaymentIntentActionPublicJwt extends BaseAction
     public function __invoke(int $eventId, string $orderShortId, string $intent): JsonResponse
     {
         $jwtToken = '';
-        $keyId = config('custom.GRUBCHAIN_KID');
+        $keyId = config('custom.TOKENIZER_KID');
         $scope = $intent == "client_secrets" ? "tokenize:card" : config('custom.GRUBCHAIN_SCOPE');
         $iss = config('custom.GRUBCHAIN_ISS');
         $aud = config('custom.GRUBCHAIN_AUD');
