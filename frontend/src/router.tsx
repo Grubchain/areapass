@@ -528,7 +528,7 @@ export const router: RouteObject[] = [
         errorElement: <ErrorPage/>
     },
     {
-        path: "/check-in/:checkInListShortId",
+        path: "/check-in/:checkInListShortId/unlock/:unlockPass",
         async lazy() {
             const CheckIn = await import("./components/layouts/CheckIn");
             return {Component: CheckIn.default};

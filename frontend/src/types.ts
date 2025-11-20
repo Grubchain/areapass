@@ -34,7 +34,8 @@ export type ConfigKeys =
   | "VITE_GRUBCHAIN_BANK_ACCOUNT_NUMBER"
   | "VITE_GRUBCHAIN_TOS"
   | "VITE_GRUBCHAIN_PRIVACY"
-  | "VITE_CANCELATION_URL";
+  | "VITE_CANCELATION_URL"
+  | "VITE_CHECKINS_RW";
 
 export enum StripePlatform {
   Canada = "ca",
