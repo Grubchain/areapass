@@ -38,12 +38,6 @@ export const pskChargeCardData = async ({ cardData, enc, jwt }) => {
   }
 }
 
-export const pskChargeCard = async (headers: any, payload: any) => {
-  gapi.defaults.headers.common = { ...gapi.defaults.headers.common, ...headers };
-
-  return gapi.post("psk/purchase/card", payload);
-}
-
 export const grubchainPostRequestDecorator = async (path, body, eventId, orderShortId, headerCallback = async () => { }) => {
   const payload = {
     raw_body: body,
@@ -57,4 +51,61 @@ export const grubchainPostRequestDecorator = async (path, body, eventId, orderSh
 
       return gapi.post(path, payload)
     })
+}
+
+export const completeGrubchainPaymentHelper = async function ({
+  response,
+  order,
+  eventId,
+  orderShortId,
+  jwtTokenFn = () => { },
+  completeGrubchainOrderFn = () => { }
+}) {
+  let checkoutState = "ERROR", txReference;
+
+  if (response?.status === 200) {
+
+    const { status, reference } = response.data;
+    txReference = reference;
+
+    if (status === "send_birthday") {
+      checkoutState = "birthday";
+    }
+    if (status === "send_pin") {
+      checkoutState = "pin";
+    }
+
+    if (status === "send_otp") {
+      checkoutState = "OTP";
+    }
+
+    if (status === "send_phone") {
+      checkoutState = "phone";
+    }
+
+    if (status === "success") {
+      const jwtToken = await jwtTokenFn(eventId, orderShortId);
+
+      const products = order.attendees;
+
+      const orderDetailsResponse = await completeGrubchainOrderFn(eventId, orderShortId, jwtToken, { order, products });
+
+      if (orderDetailsResponse?.status !== 200) {
+        const { data: orderDetails } = orderDetailsResponse;
+
+        if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
+          checkoutState = "summary";
+        }
+      }
+      else checkoutState = "ERROR";
+
+    }
+  } else {
+    checkoutState = "ERROR";
+  }
+
+  return {
+    state: checkoutState,
+    reference: txReference
+  }
 }
