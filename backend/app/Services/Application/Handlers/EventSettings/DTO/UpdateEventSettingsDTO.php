@@ -95,7 +95,7 @@ class UpdateEventSettingsDTO extends BaseDTO
             homepage_body_background_color: '#7a5eb9',
             homepage_background_type: HomepageBackgroundType::COLOR,
             require_attendee_details: false,
-            order_timeout_in_minutes: 0,
+            order_timeout_in_minutes: 10,
             website_url: null,
             maps_url: null,
             seo_title: null,
