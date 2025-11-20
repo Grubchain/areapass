@@ -117,6 +117,7 @@ class CompleteOrderHandler
             $updatedOrder = $this->updateOrderPaid($order, $orderDTO);
 
             $this->createAttendees($orderData->products, $order);
+            $this->updateAttendeeStatuses($updatedOrder);
 
             if ($orderData->order->questions) {
                 $this->createOrderQuestions($orderDTO->questions, $order);
@@ -140,6 +141,19 @@ class CompleteOrderHandler
         }
 
         return $updatedOrder;
+    }
+
+    private function updateAttendeeStatuses(OrderDomainObject $updatedOrder): void
+    {
+        $this->attendeeRepository->updateWhere(
+            attributes: [
+                'status' => AttendeeStatus::ACTIVE->name,
+            ],
+            where: [
+                'order_id' => $updatedOrder->getId(),
+                'status' => AttendeeStatus::AWAITING_PAYMENT->name,
+            ],
+        );
     }
 
     /**
