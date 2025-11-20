@@ -118,7 +118,7 @@ const AcceptInvitation = () => {
                             label={(
                                 <Trans>
                                     I agree to the <Anchor target={'_blank'}
-                                                           href={getConfig("VITE_TOS_URL",'https://hi.events/terms-of-service')}>terms and
+                                                           href={getConfig("VITE_GRUBCHAIN_TOS",'https://hi.events/terms-of-service')}>terms and
                                     conditions</Anchor>
                                 </Trans>
                             )}/>

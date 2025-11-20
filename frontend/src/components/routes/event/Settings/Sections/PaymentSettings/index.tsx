@@ -63,6 +63,9 @@ export const PaymentAndInvoicingSettings = () => {
         invoice_tax_details: eventSettingsQuery.data.invoice_tax_details || "",
       });
     }
+    console.log("paymentOptions:    ");
+    console.log(paymentOptions);
+    console.log(form.values.payment_providers);
   }, [eventSettingsQuery.isFetched]);
 
   const handleSubmit = (values: Partial<EventSettings>) => {

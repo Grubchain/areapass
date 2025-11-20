@@ -11,10 +11,12 @@ import { getConfig } from "../../../utilites/config.ts";
 export const PoweredByGrubchainFooter = (props: React.DetailedHTMLProps<React.HTMLAttributes<HTMLDivElement>, HTMLDivElement>) => {
     const [tosLink, setTosLink] = useState("");
     const [privacyLink, setPrivacyLink] = useState("");
+    const [cancelLink, setCancelLink] = useState("");
 
     useEffect(() => {
         setTosLink(getConfig('VITE_GRUBCHAIN_TOS'));
         setPrivacyLink(getConfig('VITE_GRUBCHAIN_PRIVACY'));
+        setCancelLink(getConfig('VITE_CANCELATION_URL'));
     }, []);
     return (
         <div {...props} className={classNames(classes.poweredBy, props.className)}>
@@ -34,6 +36,11 @@ export const PoweredByGrubchainFooter = (props: React.DetailedHTMLProps<React.HT
                         target="_blank"
                         title={'Grubchain Privacy Policy'}>
                         Privacy Policy
+                    </a>
+                    <a href={cancelLink}
+                        target="_blank"
+                        title={'Cancellation Policy'}>
+                        Cancellation Policy
                     </a>
                 </div>
             </div>

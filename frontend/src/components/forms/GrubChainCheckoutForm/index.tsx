@@ -73,18 +73,28 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [txReference, setTxReference] = useState(" ");
   const [enc, setEnc] = useState({});
 
+  const [tosLink, setTosLink] = useState("");
+  const [privacyLink, setPrivacyLink] = useState("");
+  const [cancelPolLink, setCancelPolLink] = useState("");
+
   const allPaymentMethods = ["card", "bank"]; //"transfer", "USSD","kuda", 
   const allBanks = banks.data;
   useEffect(() => {
     const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
     setBusinessId(theBID);
     setTxReference(orderShortId);
+    setCancelPolLink(getConfig('VITE_CANCELATION_URL'));
+    setTosLink(getConfig('VITE_GRUBCHAIN_TOS'));
+    setPrivacyLink(getConfig('VITE_GRUBCHAIN_PRIVACY'));
+
     orderClientPublic.getGrubchainJwtToken(eventId, orderShortId, "client_secrets")
-      .then((jwtToken) => clientSecretsApi({
-        jwt: jwtToken,
-        params: { "business_id": businessId, "expires_in": 600 }
-      }))
-      .then((response) => { setEnc(response) })
+      .then((jwtToken) => {
+        clientSecretsApi({
+          jwt: jwtToken,
+          params: { "business_id": theBID, "expires_in": 600 }
+        });
+      })
+      .then((response) => { setEnc(response) });
 
     if (setSubmitHandler) {
       setSubmitHandler(() => handleSubmit);
@@ -487,7 +497,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   //  checkout states
   if ((checkoutState === "OTP")) {
     return (
-      <form id="payment-otp-form">
+      <form
+        id="payment-otp-form"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
+      >
         <h2>
           {t`OTP`}
         </h2>
@@ -632,7 +649,20 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                   defaultChecked
                   name="agree"
                   onChange={(e: any) => setAgreeToTerms(e.currentTarget.checked)}
-                  label="I agree to the Areapass's terms and conditions"
+                  label={
+                    <>
+                      I agree to the{" "}
+                      <a href={tosLink} target="_blank">
+                        Terms & Conditions
+                      </a>,{" "}
+                      <a href={privacyLink} target="_blank">
+                        Privacy policy
+                      </a>{" "} and {" "}
+                      <a href={cancelPolLink} target="_blank">
+                        Cancellation policy
+                      </a>
+                    </>
+                  }
                   className="checkAgree" />
                 <Checkbox
                   name="allowEmail"
@@ -646,7 +676,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               <Group spacing="lg" m="10px" justify="space-between">
                 <Button
                   size="md"
-                  onClick={() => { eventHomepageUrl(event); }}
+                  onClick={() => { navigate(eventHomepageUrl(event)); }}
                   variant="outline"
                   className={"cancel"}>
                   {t`Cancel`}
@@ -655,7 +685,11 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
                   size="md"
                   color="#0e0cff"
                   variant="filled"
-                  onClick={() => { setTheCheckoutState(); }}
+                  onClick={() => {
+                    if (agreeToTerms) {
+                      setTheCheckoutState();
+                    }
+                  }}
                   className={"checkout"}>
                   {t`Next`}
                 </Button>

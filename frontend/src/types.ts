@@ -33,7 +33,8 @@ export type ConfigKeys =
   | "VITE_GRUBCHAIN_BANK_ACCOUNT_TRANSFER"
   | "VITE_GRUBCHAIN_BANK_ACCOUNT_NUMBER"
   | "VITE_GRUBCHAIN_TOS"
-  | "VITE_GRUBCHAIN_PRIVACY";
+  | "VITE_GRUBCHAIN_PRIVACY"
+  | "VITE_CANCELATION_URL";
 
 export enum StripePlatform {
   Canada = "ca",
@@ -174,7 +175,7 @@ export type ImageType =
   | "ORGANIZER_IMAGE"
   | "TICKET_LOGO";
 
-export type PaymentProvider = "STRIPE" | "GRUBCHAIN" | "OFFLINE";
+export type PaymentProvider = "GRUBCHAIN" | "OFFLINE"; //"STRIPE" | 
 
 export interface EventSettings {
   event_id?: IdParam;

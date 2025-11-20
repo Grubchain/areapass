@@ -149,7 +149,7 @@ const AuthLayout = () => {
                                 * If you wish to remove this notice, a commercial license is available at: https://hi.events/licensing
                                 */
                             }
-                            {!isHiEvents() && <PoweredByFooter/>}
+                            {/* {!isHiEvents() && <PoweredByFooter/>} */}
                             <div className={classes.languageSwitcher}>
                                 <LanguageSwitcher/>
                             </div>
