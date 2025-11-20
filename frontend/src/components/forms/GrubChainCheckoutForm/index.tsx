@@ -91,7 +91,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
     orderClientPublic.getGrubchainJwtToken(eventId, orderShortId, "client_secrets")
       .then((jwtToken) => {
-        clientSecretsApi({
+        return clientSecretsApi({
           jwt: jwtToken,
           params: { "business_id": theBID, "expires_in": 600 }
         });
