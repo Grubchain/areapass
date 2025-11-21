@@ -143,6 +143,67 @@ class CompleteOrderHandler
         return $updatedOrder;
     }
 
+    /**
+     * @throws ResourceNotFoundException|ResourceConflictException|RuntimeException
+     */
+    public function handleAwaitingPayment(string $orderShortId, CompleteOrderDTO $orderData): OrderDomainObject
+    {
+        $updatedOrder = DB::transaction(function () use ($orderData, $orderShortId) {
+            $orderDTO = $orderData->order;
+
+            $order = $this->getGrubchainOrder($orderShortId);
+
+            $updatedOrder = $this->updateOrder($order, $orderDTO);
+
+            $this->createAttendees($orderData->products, $order);
+            $this->updateAttendeeStatuses($updatedOrder);
+
+            if ($orderData->order->questions) {
+                $this->createOrderQuestions($orderDTO->questions, $order);
+            }
+
+            $this->productQuantityUpdateService->updateQuantitiesFromOrder($updatedOrder);
+
+            return $updatedOrder;
+        });
+
+        return $updatedOrder;
+    }
+
+    /**
+     * @throws ResourceNotFoundException|ResourceConflictException|RuntimeException
+     */
+    public function handleGrubchainWebhook(string $orderShortId): OrderDomainObject
+    {
+        $updatedOrder = DB::transaction(function () use ($orderShortId) {
+
+            $order = $this->getGrubchainOrder($orderShortId);
+            if ($order->getStatus() == OrderPaymentStatus::PAYMENT_RECEIVED->name) {
+                return false;
+            }
+
+            $updatedOrder = $this->updateOrderPaidOnlyByStatus($order);
+            $this->updateAttendeeStatuses($updatedOrder);
+            //  paid via grubchain
+            $this->productQuantityUpdateService->updateQuantitiesFromOrder($updatedOrder);
+
+            return $updatedOrder;
+        });
+
+        OrderStatusChangedEvent::dispatch($updatedOrder);
+
+        if ($updatedOrder->isOrderCompleted()) {
+            $this->domainEventDispatcherService->dispatch(
+                new OrderEvent(
+                    type: DomainEventType::ORDER_CREATED,
+                    orderId: $updatedOrder->getId(),
+                )
+            );
+        }
+
+        return $updatedOrder;
+    }
+
     private function updateAttendeeStatuses(OrderDomainObject $updatedOrder): void
     {
         $this->attendeeRepository->updateWhere(
@@ -326,7 +387,6 @@ class CompleteOrderHandler
         return $order;
     }
 
-
     /**
      * @throws ResourceConflictException
      */
@@ -390,6 +450,21 @@ class CompleteOrderHandler
                     OrderDomainObjectAbstract::FIRST_NAME => $orderDTO->first_name,
                     OrderDomainObjectAbstract::LAST_NAME => $orderDTO->last_name,
                     OrderDomainObjectAbstract::EMAIL => $orderDTO->email,
+                    OrderDomainObjectAbstract::PAYMENT_STATUS => OrderPaymentStatus::PAYMENT_RECEIVED->name,
+                    OrderDomainObjectAbstract::STATUS => OrderStatus::COMPLETED->name,
+                ]
+            );
+
+        return $updatedOrder;
+    }
+
+    private function updateOrderPaidOnlyByStatus(OrderDomainObject $order): OrderDomainObject
+    {
+        $updatedOrder = $this->orderRepository
+            ->loadRelation(OrderItemDomainObject::class)
+            ->updateFromArray(
+                $order->getId(),
+                [
                     OrderDomainObjectAbstract::PAYMENT_STATUS => OrderPaymentStatus::PAYMENT_RECEIVED->name,
                     OrderDomainObjectAbstract::STATUS => OrderStatus::COMPLETED->name,
                 ]
