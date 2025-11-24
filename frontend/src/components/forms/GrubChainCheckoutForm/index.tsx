@@ -73,6 +73,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [phone, setPhone] = useState("");
   const [payerBirthday, setPayerBirthday] = useState(" ");
   const [txReference, setTxReference] = useState(" ");
+  const [authenticateBankUrl, setAuthenticateBankUrl] = useState("");
   const [enc, setEnc] = useState({});
 
   const [tosLink, setTosLink] = useState("");
@@ -217,7 +218,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             "email": order.email,
             "cvv": cardCvv,
             "business_id": businessId,
-            order_id: orderShortId, 
+            order_id: orderShortId,
             event_id: eventId,
             "agree_to_terms": agreeToTerms,
             "allow_promotions": allowEmails,
@@ -242,8 +243,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
               orderShortId,
               jwtTokenFn: orderClientPublic.getGrubchainJwtToken,
               completeGrubchainOrderFn: orderClientPublic.payGrubchainOrder
-            }).then(({ state, reference }) => {
+            }).then(({ state, reference, authenticateBankUrl }) => {
               setTxReference(reference);
+              setAuthenticateBankUrl(authenticateBankUrl);
               state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
               setIsLoading(false);
             })
@@ -278,7 +280,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       "email": order.email,
       "bank_code": payWithBankCode,
       "bank_account_number": payWithBankAccount,
-      "order_id": orderShortId, 
+      "order_id": orderShortId,
       "event_id": eventId,
       "business_id": businessId,
       "agree_to_terms": agreeToTerms,
@@ -304,8 +306,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         orderShortId,
         jwtTokenFn: orderClientPublic.getGrubchainJwtToken,
         completeGrubchainOrderFn: orderClientPublic.payGrubchainOrder
-      }).then(({ state, reference }) => {
+      }).then(({ state, reference, authenticateBankUrl }) => {
         setTxReference(reference);
+        setAuthenticateBankUrl(authenticateBankUrl);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
         setIsLoading(false);
       }).catch(error => {
@@ -409,8 +412,10 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         orderShortId,
         jwtTokenFn: orderClientPublic.getGrubchainJwtToken,
         completeGrubchainOrderFn: orderClientPublic.payGrubchainOrder
-      }).then(({ state, reference }) => {
+      }).then(({ state, reference, authenticateBankUrl }) => {
         txReference ?? setTxReference(reference);
+
+        setAuthenticateBankUrl(authenticateBankUrl);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
         setIsLoading(false);
       }).catch(error => {
@@ -446,8 +451,10 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         orderShortId,
         jwtTokenFn: orderClientPublic.getGrubchainJwtToken,
         completeGrubchainOrderFn: orderClientPublic.payGrubchainOrder
-      }).then(({ state, reference }) => {
+      }).then(({ state, reference, authenticateBankUrl }) => {
         txReference ?? setTxReference(reference);
+
+        setAuthenticateBankUrl(authenticateBankUrl);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
         setIsLoading(false);
       })
@@ -479,8 +486,10 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         orderShortId,
         jwtTokenFn: orderClientPublic.getGrubchainJwtToken,
         completeGrubchainOrderFn: orderClientPublic.payGrubchainOrder
-      }).then(({ state, reference }) => {
+      }).then(({ state, reference, authenticateBankUrl }) => {
         txReference ?? setTxReference(reference);
+
+        setAuthenticateBankUrl(authenticateBankUrl);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
         setIsLoading(false);
       }).catch(error => {
@@ -520,8 +529,10 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         orderShortId,
         jwtTokenFn: orderClientPublic.getGrubchainJwtToken,
         completeGrubchainOrderFn: orderClientPublic.payGrubchainOrder
-      }).then(({ state, reference }) => {
+      }).then(({ state, reference, authenticateBankUrl }) => {
         txReference ?? setTxReference(reference);
+
+        setAuthenticateBankUrl(authenticateBankUrl);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
         setIsLoading(false);
       }).catch(error => {
@@ -530,10 +541,10 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         console.log(error);
       });
     }).catch(error => {
-        setCheckoutState("ERROR");
-        setIsLoading(false);
-        console.log(error);
-      });
+      setCheckoutState("ERROR");
+      setIsLoading(false);
+      console.log(error);
+    });
   }
 
   const payTransfer = async () => {
@@ -1344,6 +1355,23 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           </Group>
         </Stack>
       </form >
+    );
+  }
+
+  if (checkoutState === 'url') {
+    return (
+      <>
+        <h2>
+          {t`Bank Authentication`}
+        </h2>
+        <h3>
+          {t`Choose your bank to start the payment process`}
+        </h3>
+        <p>
+          {"Click the link below to authenticate with your bank"}
+          <a href={authenticateBankUrl} onClick={(e) => { navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) }} target="_blank">Authenticate Bank</a>
+        </p>
+      </>
     );
   }
 

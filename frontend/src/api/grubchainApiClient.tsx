@@ -4,7 +4,7 @@ import { encryptCardData, importEncryptionKeyFromClientSecret } from "../utilite
 
 const GRUBCHAIN_URL = getConfig('VITE_GRUBCHAIN_URL');
 const TOKENIZER_URL = getConfig('VITE_GRUBCHAIN_TOKENIZER_URL');
-const TX_STATUS_PENDING = ['ongoing','pending','processing'];
+const TX_STATUS_PENDING = ['ongoing', 'pending', 'processing'];
 
 export const gapi = axios.create({
   baseURL: GRUBCHAIN_URL,
@@ -62,11 +62,11 @@ export const completeGrubchainPaymentHelper = async function ({
   jwtTokenFn = () => { },
   completeGrubchainOrderFn = () => { }
 }) {
-  let checkoutState = "ERROR", txReference;
+  let checkoutState = "ERROR", txReference, authenticateBankUrl;
 
   if (response?.status === 200) {
 
-    const { status, reference } = response.data;
+    const { status, reference, url } = response.data;
     txReference = reference;
 
     if (status === "send_birthday") {
@@ -82,6 +82,11 @@ export const completeGrubchainPaymentHelper = async function ({
 
     if (status === "send_phone") {
       checkoutState = "phone";
+    }
+
+    if (status === "open_url") {
+      checkoutState = "url";
+      authenticateBankUrl = url;
     }
 
     if (status === "success") {
@@ -106,20 +111,21 @@ export const completeGrubchainPaymentHelper = async function ({
   }
 
   return {
+    authenticateBankUrl,
     state: checkoutState,
-    reference: txReference
+    reference: txReference,
   }
 }
 
 
-export const detectPaymentApiResponse = (response:any) => {
+export const detectPaymentApiResponse = (response: any) => {
   if (!response || !response.status)
     return "ERROR";
   if (response.status == 'abandoned')
     return "ERROR";
   if (response.status == 'failed')
     return "ERROR";
-  if (TX_STATUS_PENDING.includes(response.status)) 
+  if (TX_STATUS_PENDING.includes(response.status))
     return "PENDING";
   return "SUCCESS";
 }
