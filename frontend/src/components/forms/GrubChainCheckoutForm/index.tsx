@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { InputGroup } from "../../common/InputGroup";
 import { t } from "@lingui/macro";
 import { Alert, Skeleton, Radio, Text, Checkbox, Group, TextInput, Stack, NativeSelect } from "@mantine/core";
-import { LoadingMask } from "../../common/LoadingMask";
+import { LoadingMaskPlain } from "../../common/LoadingMaskPlain/index.tsx";
 import { DatePicker } from "@mantine/dates";
 import { useGetOrderPublic } from "../../../queries/useGetOrderPublic.ts";
 import { Card } from "../../common/Card";
@@ -14,7 +14,7 @@ import { formatCard, formatPhone, validateExpDate, validateCard, validateCvv, va
 import { Event } from "../../../types.ts";
 import "./GrubchainCheckoutForm.module.scss"
 import { Button } from "../../common/Button/index.tsx";
-import { gapi, clientSecretsApi, pskChargeCardData, grubchainPostRequestDecorator, completeGrubchainPaymentHelper } from "../../../api/grubchainApiClient.tsx";
+import { gapi, clientSecretsApi, pskChargeCardData, grubchainPostRequestDecorator, completeGrubchainPaymentHelper, detectPaymentApiResponse } from "../../../api/grubchainApiClient.tsx";
 import { getToken } from "../../../api/grubchainTokenizerApiClient.ts";
 import { orderClientPublic, orderClient } from "../../../api/order.client.ts";
 import { getConfig } from "../../../utilites/config.ts";
@@ -78,6 +78,8 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [tosLink, setTosLink] = useState("");
   const [privacyLink, setPrivacyLink] = useState("");
   const [cancelPolLink, setCancelPolLink] = useState("");
+
+  const [isLoading, setIsLoading] = useState(Boolean);
 
   const allPaymentMethods = ["card", "bank"]; //"transfer", "USSD","kuda", 
   const allBanks = banks.data;
@@ -166,7 +168,9 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   //  handle different payment methods
   const setTheCheckoutState = () => {
+    setIsLoading(true);
     setCheckoutState(paymentMethod);
+    setIsLoading(false);
   }
 
   const resetTheCheckoutState = () => {
@@ -182,23 +186,28 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   //  pay APIs
   const payCard = async () => {
     try {
-
+      setIsLoading(true);
       orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
         let month = parseInt(cardExp.slice(0, 2), 10);
         let year = parseInt(cardExp.slice(2), 10);
-
+        setIsLoading(true);
         return pskChargeCardData({
           cardData: { "business_id": businessId, "card_number": cardNum.replace(/\s+/g, ""), "expiry_year": year, "expiry_month": month },
           enc,
           jwt: jwtToken
         })
       }).then(({ jwtToken, enc, encryptedData }) => {
+        setIsLoading(true);
         getToken(
           jwtToken,
           enc,
           encryptedData,
           businessId
         ).then(response => {
+          const resp = detectPaymentApiResponse(response);
+          if (resp == "ERROR") {
+            setCheckoutState("ERROR");
+          }
           setPaymentToken(response.data.token);
           setBusinessId(response.business_id);
 
@@ -208,6 +217,8 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             "email": order.email,
             "cvv": cardCvv,
             "business_id": businessId,
+            order_id: orderShortId, 
+            event_id: eventId,
             "agree_to_terms": agreeToTerms,
             "allow_promotions": allowEmails,
             "notify_crypto": notifyCryptoAvailable
@@ -234,12 +245,26 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             }).then(({ state, reference }) => {
               setTxReference(reference);
               state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
+              setIsLoading(false);
             })
-          })
+          }).catch(error => {
+            setIsLoading(false);
+            setCheckoutState("ERROR");
+            console.log(error);
+          });
+        }).catch(error => {
+          setIsLoading(false);
+          setCheckoutState("ERROR");
+          console.log(error);
         });
+      }).catch(error => {
+        setIsLoading(false);
+        setCheckoutState("ERROR");
+        console.log(error);
       });
     } catch (error) {
-
+      console.log(error);
+      setCheckoutState("ERROR");
     }
   }
 
@@ -247,12 +272,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
     setPayWithBankAmount(order.total_gross * 100);
     const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
     setBusinessId(theBID);
-
+    setIsLoading(true);
     const body = {
       "amount": order.total_gross * 100,
       "email": order.email,
       "bank_code": payWithBankCode,
       "bank_account_number": payWithBankAccount,
+      "order_id": orderShortId, 
+      "event_id": eventId,
       "business_id": businessId,
       "agree_to_terms": agreeToTerms,
       "allow_promotions": allowEmails,
@@ -280,7 +307,16 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       }).then(({ state, reference }) => {
         setTxReference(reference);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
-      })
+        setIsLoading(false);
+      }).catch(error => {
+        setIsLoading(false);
+        console.log(error);
+        setCheckoutState("ERROR");
+      });
+    }).catch(error => {
+      setIsLoading(false);
+      console.log(error);
+      setCheckoutState("ERROR");
     });
   }
 
@@ -354,7 +390,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   const sendPin = async (pin: string, reference: string) => {
     const body = { pin, reference };
-
+    setIsLoading(true);
     grubchainPostRequestDecorator(
       "/api/v1/psk/submit/pin",
       body,
@@ -376,13 +412,22 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       }).then(({ state, reference }) => {
         txReference ?? setTxReference(reference);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
-      })
-    })
+        setIsLoading(false);
+      }).catch(error => {
+        setCheckoutState("ERROR");
+        setIsLoading(false);
+        console.log(error);
+      });
+    }).catch(error => {
+      setCheckoutState("ERROR");
+      setIsLoading(false);
+      console.log(error);
+    });
   }
 
   const sendOtp = async (otp: string, reference: string) => {
     const body = { otp, reference };
-
+    setIsLoading(true);
     grubchainPostRequestDecorator(
       "/api/v1/psk/submit/otp",
       body,
@@ -404,13 +449,18 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       }).then(({ state, reference }) => {
         txReference ?? setTxReference(reference);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
+        setIsLoading(false);
       })
-    })
+    }).catch(error => {
+      setCheckoutState("ERROR");
+      setIsLoading(false);
+      console.log(error);
+    });
   }
 
   const sendPhone = async (phone: string, reference: string) => {
     const body = { phone, reference };
-
+    setIsLoading(true);
     grubchainPostRequestDecorator(
       "/api/v1/psk/submit/phone",
       body,
@@ -432,8 +482,17 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       }).then(({ state, reference }) => {
         txReference ?? setTxReference(reference);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
-      })
-    })
+        setIsLoading(false);
+      }).catch(error => {
+        setCheckoutState("ERROR");
+        setIsLoading(false);
+        console.log(error);
+      });
+    }).catch(error => {
+      setCheckoutState("ERROR");
+      setIsLoading(false);
+      console.log(error);
+    });
   }
 
   const sendBirthday = async (birthday: string, reference: string) => {
@@ -442,7 +501,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       "birthday": birthday
     }
     setTxReference(reference);
-
+    setIsLoading(true);
     grubchainPostRequestDecorator(
       "/api/v1/psk/submit/birthday",
       body,
@@ -464,8 +523,17 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       }).then(({ state, reference }) => {
         txReference ?? setTxReference(reference);
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
-      })
-    });
+        setIsLoading(false);
+      }).catch(error => {
+        setCheckoutState("ERROR");
+        setIsLoading(false);
+        console.log(error);
+      });
+    }).catch(error => {
+        setCheckoutState("ERROR");
+        setIsLoading(false);
+        console.log(error);
+      });
   }
 
   const payTransfer = async () => {
@@ -526,7 +594,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`OTP`}
         </h2>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Card>
           <TextInput
             withAsterisk
@@ -564,7 +632,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`PIN`}
         </h2>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Card>
           <TextInput
             withAsterisk
@@ -602,7 +670,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`Phone`}
         </h2>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Card>
           <TextInput
             withAsterisk
@@ -649,7 +717,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`Enter your birthday`}
         </h2>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Card>
           <DatePicker
             label={t`Birthday`}
@@ -813,19 +881,17 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   if (checkoutState === 'card') {
     return (
       <form id="payment-form"
-
         onKeyDown={(e) => {
           if (e.key === "Enter") {
             e.preventDefault();
           }
         }}
-
       >
         <h2>
           {t`Pay with Card`}
         </h2>
+        <LoadingMaskPlain active={isLoading} />
         <Stack>
-          <LoadingMask />
           <Card>
             <TextInput
               withAsterisk
@@ -892,8 +958,8 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <h2>
           {t`Payment`}
         </h2>
+        <LoadingMaskPlain active={isLoading} />
         <Stack>
-          <LoadingMask />
           <Card>
             <h3>Confirm card details</h3>
 
@@ -947,7 +1013,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`Payment by Transfer`}
         </h2>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Card>
           <InputGroup>
             <span className={"card-detail-label"}>Bank Name</span>
@@ -1004,7 +1070,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`Pay with Bank`}
         </h2>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Card>
           <InputGroup>
             <TextInput
@@ -1064,7 +1130,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <h2>
           {t`Pay with Bank`}
         </h2>
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Card>
           <h3>Confirm bank details</h3>
           <InputGroup>
@@ -1116,7 +1182,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`Pay with Kuda`}
         </h2>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Card>
           <InputGroup>
             <TextInput
@@ -1193,7 +1259,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         <h2>
           {t`Pay with Kuda`}
         </h2>
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Card>
           <h3>Confirm Kuda details</h3>
           <InputGroup>
@@ -1241,7 +1307,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`Choose your bank to start the payment process`}
         </h3>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Stack>
           <Button
             size="md"
@@ -1288,7 +1354,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`Payment`}
         </h2>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Stack>
           <Text>
             {ussdText}
@@ -1325,7 +1391,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`We're waiting to confirm your transfer. This can take a few minutes`}
         </h2>
 
-        <LoadingMask />
+        <LoadingMaskPlain active={isLoading} />
         <Group spacing="lg" m="10px" justify="space-between">
           <Button
             size="md"

@@ -88,11 +88,11 @@ use HiEvents\Http\Actions\Orders\Payment\RefundOrderAction;
 use HiEvents\Http\Actions\Orders\Payment\Stripe\CreatePaymentIntentActionPublic;
 use HiEvents\Http\Actions\Orders\Payment\Stripe\GetPaymentIntentActionPublic;
 use HiEvents\Http\Actions\Orders\Public\AbandonOrderActionPublic;
-use HiEvents\Http\Actions\Orders\Payment\Grubchain\CreatePaymentIntentActionPublic as CPAG;
-use HiEvents\Http\Actions\Orders\Payment\Grubchain\GetPaymentIntentActionPublic as GPAG;
 use HiEvents\Http\Actions\Orders\Payment\Grubchain\CreatePaymentIntentActionPublicJwt;
 use HiEvents\Http\Actions\Orders\Payment\Grubchain\GetPaymentIntentActionPublicHeaders;
 use HiEvents\Http\Actions\Orders\Public\CompleteGrubchainOrderActionPublic;
+use HiEvents\Http\Actions\Orders\Public\MarkAwaitingPaymentOrderActionPublic;
+use HiEvents\Http\Actions\Orders\Public\CompleteGrubchainOrderHookActionPublic;
 use HiEvents\Http\Actions\Orders\Public\CompleteOrderActionPublic;
 use HiEvents\Http\Actions\Orders\Public\CreateOrderActionPublic;
 use HiEvents\Http\Actions\Orders\Public\DownloadOrderInvoicePublicAction;
@@ -422,8 +422,12 @@ $router->prefix('/public')->group(
         // grubchain
         $router->get('/events/{event_id}/order/{order_short_id}/grubchain/jwt/{intent}', CreatePaymentIntentActionPublicJwt::class);
         $router->post('/events/{event_id}/order/{order_short_id}/grubchain/headers/{intent}', GetPaymentIntentActionPublicHeaders::class);
+        //  mark order as awaiting payment, still not used here
+        $router->post('/events/{event_id}/order_awaiting/{order_short_id}/jwt/{jwt}', MarkAwaitingPaymentOrderActionPublic::class);
         //  payment done, just mark the order
         $router->post('/events/{event_id}/order/{order_short_id}/jwt/{jwt}', CompleteGrubchainOrderActionPublic::class);
+        //  web hook
+        $router->post('/events/pay_webhook/{order_short_id}/{key}/{timestamp}', CompleteGrubchainOrderHookActionPublic::class);
 
         // Questions
         $router->get('/events/{event_id}/questions', GetQuestionsPublicAction::class);
