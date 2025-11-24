@@ -1368,8 +1368,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           {t`Choose your bank to start the payment process`}
         </h3>
         <p>
-          {"Click the link below to authenticate with your bank"}
-          <a href={authenticateBankUrl} onClick={(e) => { navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) }} target="_blank">Authenticate Bank</a>
+          <a href={authenticateBankUrl} onClick={(e) => { navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) }} target="_blank" style={{ color: "blue", textDecoration: "underline" }}> Click to authenticate with your bank</a>
         </p>
       </>
     );
