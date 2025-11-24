@@ -40,3 +40,4 @@ services:
       QUEUE_CONNECTION: "redis"
       DATABASE_URL: ""
       STRIPE_WEBHOOK_SECRET: ""
+      APP_EMAIL_FOOTER_TEXT: "&copy; Areapass"

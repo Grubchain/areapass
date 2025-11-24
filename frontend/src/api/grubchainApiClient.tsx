@@ -4,6 +4,7 @@ import { encryptCardData, importEncryptionKeyFromClientSecret } from "../utilite
 
 const GRUBCHAIN_URL = getConfig('VITE_GRUBCHAIN_URL');
 const TOKENIZER_URL = getConfig('VITE_GRUBCHAIN_TOKENIZER_URL');
+const TX_STATUS_PENDING = ['ongoing','pending','processing'];
 
 export const gapi = axios.create({
   baseURL: GRUBCHAIN_URL,
@@ -108,4 +109,17 @@ export const completeGrubchainPaymentHelper = async function ({
     state: checkoutState,
     reference: txReference
   }
+}
+
+
+export const detectPaymentApiResponse = (response:any) => {
+  if (!response || !response.status)
+    return "ERROR";
+  if (response.status == 'abandoned')
+    return "ERROR";
+  if (response.status == 'failed')
+    return "ERROR";
+  if (TX_STATUS_PENDING.includes(response.status)) 
+    return "PENDING";
+  return "SUCCESS";
 }

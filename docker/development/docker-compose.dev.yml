@@ -78,6 +78,7 @@ services:
             VITE_CANCELATION_URL: '/CancellationandRefundPolicy.html'
             VITE_CHECKINS_RW: 'm1t3va'
             GRUBCHAIN_WEBHOOK_KEY: 'key123key123'
+            APP_EMAIL_FOOTER_TEXT: '&copy; Areapass'
         networks:
             - app
 

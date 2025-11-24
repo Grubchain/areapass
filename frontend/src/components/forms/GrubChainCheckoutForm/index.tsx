@@ -14,7 +14,7 @@ import { formatCard, formatPhone, validateExpDate, validateCard, validateCvv, va
 import { Event } from "../../../types.ts";
 import "./GrubchainCheckoutForm.module.scss"
 import { Button } from "../../common/Button/index.tsx";
-import { gapi, clientSecretsApi, pskChargeCardData, grubchainPostRequestDecorator, completeGrubchainPaymentHelper } from "../../../api/grubchainApiClient.tsx";
+import { gapi, clientSecretsApi, pskChargeCardData, grubchainPostRequestDecorator, completeGrubchainPaymentHelper, detectPaymentApiResponse } from "../../../api/grubchainApiClient.tsx";
 import { getToken } from "../../../api/grubchainTokenizerApiClient.ts";
 import { orderClientPublic, orderClient } from "../../../api/order.client.ts";
 import { getConfig } from "../../../utilites/config.ts";
@@ -204,6 +204,10 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           encryptedData,
           businessId
         ).then(response => {
+          const resp = detectPaymentApiResponse(response);
+          if (resp == "ERROR") {
+            setCheckoutState("ERROR");
+          }
           setPaymentToken(response.data.token);
           setBusinessId(response.business_id);
 
@@ -213,6 +217,8 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             "email": order.email,
             "cvv": cardCvv,
             "business_id": businessId,
+            order_id: orderShortId, 
+            event_id: eventId,
             "agree_to_terms": agreeToTerms,
             "allow_promotions": allowEmails,
             "notify_crypto": notifyCryptoAvailable
@@ -243,18 +249,22 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             })
           }).catch(error => {
             setIsLoading(false);
+            setCheckoutState("ERROR");
             console.log(error);
           });
         }).catch(error => {
           setIsLoading(false);
+          setCheckoutState("ERROR");
           console.log(error);
         });
       }).catch(error => {
         setIsLoading(false);
+        setCheckoutState("ERROR");
         console.log(error);
       });
     } catch (error) {
-
+      console.log(error);
+      setCheckoutState("ERROR");
     }
   }
 
@@ -268,6 +278,8 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       "email": order.email,
       "bank_code": payWithBankCode,
       "bank_account_number": payWithBankAccount,
+      "order_id": orderShortId, 
+      "event_id": eventId,
       "business_id": businessId,
       "agree_to_terms": agreeToTerms,
       "allow_promotions": allowEmails,
@@ -299,10 +311,12 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       }).catch(error => {
         setIsLoading(false);
         console.log(error);
+        setCheckoutState("ERROR");
       });
     }).catch(error => {
       setIsLoading(false);
       console.log(error);
+      setCheckoutState("ERROR");
     });
   }
 
@@ -400,10 +414,12 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
         setIsLoading(false);
       }).catch(error => {
+        setCheckoutState("ERROR");
         setIsLoading(false);
         console.log(error);
       });
     }).catch(error => {
+      setCheckoutState("ERROR");
       setIsLoading(false);
       console.log(error);
     });
@@ -436,6 +452,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         setIsLoading(false);
       })
     }).catch(error => {
+      setCheckoutState("ERROR");
       setIsLoading(false);
       console.log(error);
     });
@@ -467,10 +484,12 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
         setIsLoading(false);
       }).catch(error => {
+        setCheckoutState("ERROR");
         setIsLoading(false);
         console.log(error);
       });
     }).catch(error => {
+      setCheckoutState("ERROR");
       setIsLoading(false);
       console.log(error);
     });
@@ -506,10 +525,12 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
         state === "summary" ? navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) : setCheckoutState(state);
         setIsLoading(false);
       }).catch(error => {
+        setCheckoutState("ERROR");
         setIsLoading(false);
         console.log(error);
       });
     }).catch(error => {
+        setCheckoutState("ERROR");
         setIsLoading(false);
         console.log(error);
       });
