@@ -376,7 +376,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
     }).then((response: any) => {
       if (response?.status === 'success') {
         orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
-          const products = order.attendees;
+          const products = [order.attendees[0]];
           const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
           if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
             navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));

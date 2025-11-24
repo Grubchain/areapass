@@ -87,7 +87,7 @@ export const completeGrubchainPaymentHelper = async function ({
     if (status === "success") {
       const jwtToken = await jwtTokenFn(eventId, orderShortId);
 
-      const products = order.attendees;
+      const products = [order.attendees[0]];
 
       const orderDetailsResponse = await completeGrubchainOrderFn(eventId, orderShortId, jwtToken, { order, products });
 
