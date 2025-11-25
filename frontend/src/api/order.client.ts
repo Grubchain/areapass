@@ -277,6 +277,19 @@ export const orderClientPublic = {
     );
     return response.data;
   },
+  awaitGrubchainPayment: async (
+    eventId: number,
+    orderShortId: string,
+    jwt: string,
+    payload: FinaliseOrderPayload,
+  ) => {
+    //'/events/{event_id}/order_awaiting/{order_short_id}/jwt/{jwt}'
+    const response = await publicApi.post<GenericDataResponse<Order>>(
+      `events/${eventId}/order_awaiting/${orderShortId}/jwt/${jwt}`,
+      payload,
+    );
+    return response.data;
+  },
 
   transitionToOfflinePayment: async (
     eventId: IdParam,

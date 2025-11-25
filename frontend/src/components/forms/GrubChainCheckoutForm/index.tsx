@@ -378,15 +378,28 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
       "reference": reference
     }).then((response: any) => {
       if (response?.status === 'success') {
-        orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
-          const products = [order.attendees[0]];
-          const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
-          if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
-            navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
-          } else {
-            setCheckoutState("ERROR");
-          }
-        });
+        //orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then((jwtToken) => {
+        //const products = [order.attendees[0]];
+        //const orderDetails = orderClientPublic.payGrubchainOrder(eventId, orderShortId, jwtToken, { order, products });
+        //if (orderDetails.payment_status === 'PAYMENT_RECEIVED') {
+        //navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
+        //} else {
+        //setCheckoutState("ERROR");
+        //}
+        //});
+      }
+    });
+  }
+
+  const handleWaitingButton = async () => {
+    orderClientPublic.getGrubchainJwtToken(eventId, orderShortId).then(async (jwtToken) => {
+      const products = order.attendees;
+      const { data: orderDetails } = await orderClientPublic.awaitGrubchainPayment(eventId, orderShortId, jwtToken, { order, products });
+
+      if (orderDetails.payment_status === 'AWAITING_PAYMENT') {
+        navigate(eventCheckoutPath(eventId, orderShortId, 'summary'));
+      } else {
+        setCheckoutState("ERROR");
       }
     });
   }
@@ -1360,17 +1373,16 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   if (checkoutState === 'url') {
     return (
-      <>
-        <h2>
-          {t`Bank Authentication`}
-        </h2>
-        <h3>
-          {t`Choose your bank to start the payment process`}
-        </h3>
-        <p>
-          <a href={authenticateBankUrl} onClick={(e) => { navigate(eventCheckoutPath(eventId, orderShortId, 'summary')) }} target="_blank" style={{ color: "blue", textDecoration: "underline" }}> Click to authenticate with your bank</a>
-        </p>
-      </>
+      <Stack>
+        <Card>
+          <h2>
+            {t`Bank Authentication`}
+          </h2>
+          <p>
+            <a href={authenticateBankUrl} onClick={(e) => { setCheckoutState("waiting") }} target="_blank" style={{ color: "blue", textDecoration: "underline" }}> Click to authenticate with your bank</a>
+          </p>
+        </Card>
+      </Stack>
     );
   }
 
@@ -1413,22 +1425,27 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   if (checkoutState === 'waiting') {
     return (
-      <form id="payment-form">
-        <h2>
-          {t`We're waiting to confirm your transfer. This can take a few minutes`}
-        </h2>
+      <Stack>
+        <Card>
+          <form id="payment-form">
+            <h2>
+              {t`We're waiting to confirm your transfer. This can take a few minutes`}
+            </h2>
 
-        <LoadingMaskPlain active={isLoading} />
-        <Group spacing="lg" m="10px" justify="space-between">
-          <Button
-            size="md"
-            color="#0e0cff"
-            variant="filled"
-            className={"checkout"}>
-            {t`Ok`}
-          </Button>
-        </Group>
-      </form >
+            <LoadingMaskPlain active={isLoading} />
+            <Group spacing="lg" m="10px" justify="space-between">
+              <Button
+                size="md"
+                color="#0e0cff"
+                variant="filled"
+                onClick={(e) => handleWaitingButton()}
+                className={"checkout"}>
+                {t`Next`}
+              </Button>
+            </Group>
+          </form >
+        </Card>
+      </Stack>
     );
   }
 }

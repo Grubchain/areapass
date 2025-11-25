@@ -116,7 +116,6 @@ class CompleteOrderHandler
 
             $updatedOrder = $this->updateOrderPaid($order, $orderDTO);
 
-            $this->createAttendees($orderData->products, $order);
             $this->updateAttendeeStatuses($updatedOrder);
 
             if ($orderData->order->questions) {
@@ -153,10 +152,10 @@ class CompleteOrderHandler
 
             $order = $this->getGrubchainOrder($orderShortId);
 
-            $updatedOrder = $this->updateOrder($order, $orderDTO);
+            $updatedOrder = $this->updateGrubchainOrder($order, $orderDTO, true);
 
-            $this->createAttendees($orderData->products, $order);
-            $this->updateAttendeeStatuses($updatedOrder);
+            //$this->createAttendees($orderData->products, $order);
+            //$this->updateAttendeeStatuses($updatedOrder);
 
             if ($orderData->order->questions) {
                 $this->createOrderQuestions($orderDTO->questions, $order);
@@ -179,7 +178,7 @@ class CompleteOrderHandler
 
             $order = $this->getGrubchainOrder($orderShortId);
             if ($order->getStatus() == OrderPaymentStatus::PAYMENT_RECEIVED->name) {
-                return false;
+                return $order;
             }
 
             $updatedOrder = $this->updateOrderPaidOnlyByStatus($order);
@@ -405,6 +404,46 @@ class CompleteOrderHandler
         }
 
         return $order;
+    }
+
+    private function updateGrubchainOrder(OrderDomainObject $order, CompleteOrderOrderDTO $orderDTO, bool $keepWaiting = false): OrderDomainObject
+    {
+        $orderPaymentStatusOrAwaiting = $order->isPaymentRequired()
+                        ? OrderPaymentStatus::AWAITING_PAYMENT->name
+                        : OrderPaymentStatus::NO_PAYMENT_REQUIRED->name;
+
+        $orderStatus = $order->isPaymentRequired()
+            ? OrderStatus::RESERVED->name
+            : OrderStatus::COMPLETED->name;
+
+        if($keepWaiting === true) {
+            $orderPaymentStatusOrAwaiting = OrderPaymentStatus::AWAITING_PAYMENT->name;
+            $orderStatus = OrderStatus::COMPLETED->name;
+        }
+
+        $updatedOrder = $this->orderRepository
+            ->loadRelation(OrderItemDomainObject::class)
+            ->updateFromArray(
+                $order->getId(),
+                [
+                    OrderDomainObjectAbstract::ADDRESS => $orderDTO->address,
+                    OrderDomainObjectAbstract::FIRST_NAME => $orderDTO->first_name,
+                    OrderDomainObjectAbstract::LAST_NAME => $orderDTO->last_name,
+                    OrderDomainObjectAbstract::EMAIL => $orderDTO->email,
+                    OrderDomainObjectAbstract::PAYMENT_STATUS => $orderPaymentStatusOrAwaiting,
+                    OrderDomainObjectAbstract::STATUS => $orderStatus,
+                ]
+            );
+
+        // Update affiliate sales if this is a free order (no payment required) and has an affiliate
+        if (!$order->isPaymentRequired() && $updatedOrder->getAffiliateId()) {
+            $this->affiliateRepository->incrementSales(
+                $updatedOrder->getAffiliateId(),
+                $updatedOrder->getTotalGross()
+            );
+        }
+
+        return $updatedOrder;
     }
 
     private function updateOrder(OrderDomainObject $order, CompleteOrderOrderDTO $orderDTO): OrderDomainObject
