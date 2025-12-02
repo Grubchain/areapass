@@ -55,9 +55,7 @@ class CompleteOrderHandler
         private readonly ProductQuantityUpdateService      $productQuantityUpdateService,
         private readonly ProductPriceRepositoryInterface   $productPriceRepository,
         private readonly DomainEventDispatcherService      $domainEventDispatcherService,
-    )
-    {
-    }
+    ) {}
 
     /**
      * @throws ResourceNotFoundException|ResourceConflictException|RuntimeException
@@ -203,6 +201,24 @@ class CompleteOrderHandler
         return $updatedOrder;
     }
 
+    /**
+     * Check if an order is in AWAITING_PAYMENT and RESERVED
+     * used for webhook
+     * @param string $orderShortId
+     * @return bool
+     */
+    public function isOrderOpenAwaiting(string $orderShortId): bool
+    {
+        $order = $this->getGrubchainOrder($orderShortId);
+        if (
+            $order->getStatus() == OrderPaymentStatus::AWAITING_PAYMENT->name && 
+            $order->getPaymentStatus() === OrderStatus::RESERVED->name
+        ) {
+            return true;
+        }
+        return false;
+    }
+
     private function updateAttendeeStatuses(OrderDomainObject $updatedOrder): void
     {
         $this->attendeeRepository->updateWhere(
@@ -235,7 +251,8 @@ class CompleteOrderHandler
 
         foreach ($orderProducts as $attendee) {
             $productId = $productsPrices->first(
-                fn(ProductPriceDomainObject $productPrice) => $productPrice->getId() === $attendee->product_price_id)
+                fn(ProductPriceDomainObject $productPrice) => $productPrice->getId() === $attendee->product_price_id
+            )
                 ->getProductId();
             $productType = $this->getProductTypeFromPriceId($attendee->product_price_id, $order->getOrderItems());
 
@@ -307,8 +324,7 @@ class CompleteOrderHandler
         Collection        $createdAttendees,
         OrderDomainObject $order,
         Collection        $productPrices
-    ): void
-    {
+    ): void {
         $newAttendees = $this->attendeeRepository->findWhereIn(
             field: AttendeeDomainObjectAbstract::SHORT_ID,
             values: $createdAttendees->pluck('shortId')->toArray(),
@@ -374,7 +390,8 @@ class CompleteOrderHandler
                 new Relationship(
                     domainObject: OrderItemDomainObject::class,
                     nested: [new Relationship(ProductDomainObject::class, name: 'product')]
-                ))
+                )
+            )
             ->findByShortId($orderShortId);
 
         if ($order === null) {
@@ -396,7 +413,8 @@ class CompleteOrderHandler
                 new Relationship(
                     domainObject: OrderItemDomainObject::class,
                     nested: [new Relationship(ProductDomainObject::class, name: 'product')]
-                ))
+                )
+            )
             ->findByShortId($orderShortId);
 
         if ($order === null) {
@@ -409,14 +427,14 @@ class CompleteOrderHandler
     private function updateGrubchainOrder(OrderDomainObject $order, CompleteOrderOrderDTO $orderDTO, bool $keepWaiting = false): OrderDomainObject
     {
         $orderPaymentStatusOrAwaiting = $order->isPaymentRequired()
-                        ? OrderPaymentStatus::AWAITING_PAYMENT->name
-                        : OrderPaymentStatus::NO_PAYMENT_REQUIRED->name;
+            ? OrderPaymentStatus::AWAITING_PAYMENT->name
+            : OrderPaymentStatus::NO_PAYMENT_REQUIRED->name;
 
         $orderStatus = $order->isPaymentRequired()
             ? OrderStatus::RESERVED->name
             : OrderStatus::COMPLETED->name;
 
-        if($keepWaiting === true) {
+        if ($keepWaiting === true) {
             $orderPaymentStatusOrAwaiting = OrderPaymentStatus::AWAITING_PAYMENT->name;
             $orderStatus = OrderStatus::COMPLETED->name;
         }
@@ -541,9 +559,10 @@ class CompleteOrderHandler
         $ticketAttendeeCount = $attendees
             ->filter(
                 fn(CompleteOrderProductDataDTO $attendee) => $this->getProductTypeFromPriceId(
-                        $attendee->product_price_id,
-                        $order->getOrderItems()
-                    ) === ProductType::TICKET->name)
+                    $attendee->product_price_id,
+                    $order->getOrderItems()
+                ) === ProductType::TICKET->name
+            )
             ->count();
 
         if ($orderAttendeeCount !== $ticketAttendeeCount) {

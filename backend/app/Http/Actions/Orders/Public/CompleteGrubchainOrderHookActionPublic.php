@@ -34,6 +34,10 @@ class CompleteGrubchainOrderHookActionPublic extends BaseAction
                 return $this->errorResponse("Bad Request", Response::HTTP_BAD_REQUEST);
             }
 
+            if (!$this->orderService->isOrderOpenAwaiting($orderShortId)){
+                return $this->errorResponse("Bad Request", Response::HTTP_BAD_REQUEST);
+            }
+
             $order = $this->orderService->handleGrubchainWebhook($orderShortId);
         } catch (ResourceConflictException $e) {
             return $this->errorResponse($e->getMessage(), Response::HTTP_CONFLICT);
