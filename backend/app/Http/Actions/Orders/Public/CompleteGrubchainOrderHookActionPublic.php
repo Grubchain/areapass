@@ -24,9 +24,9 @@ class CompleteGrubchainOrderHookActionPublic extends BaseAction
             $isOlderThan15Minutes = Carbon::createFromTimestamp($timestamp)
                 ->lt(Carbon::now()->subMinutes(15));
             //  if the request is older than 15 minutes, fail
-            if ($isOlderThan15Minutes) {
-                return $this->errorResponse("Bad Request", Response::HTTP_BAD_REQUEST);
-            }
+            // if ($isOlderThan15Minutes) {
+            //     return $this->errorResponse("Bad Request", Response::HTTP_BAD_REQUEST);
+            // }
             //  if the webhook key is different fail
             $envKey = config('custom.GRUBCHAIN_WEBHOOK_KEY');
             $decodedKey = base64_decode($key);
