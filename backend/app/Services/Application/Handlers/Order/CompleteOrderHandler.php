@@ -202,7 +202,7 @@ class CompleteOrderHandler
     }
 
     /**
-     * Check if an order is in AWAITING_PAYMENT and RESERVED
+     * Check if an order is in AWAITING_PAYMENT and COMPLETED
      * used for webhook
      * @param string $orderShortId
      * @return bool
@@ -212,7 +212,7 @@ class CompleteOrderHandler
         $order = $this->getGrubchainOrder($orderShortId);
         if (
             $order->getStatus() == OrderPaymentStatus::AWAITING_PAYMENT->name && 
-            $order->getPaymentStatus() === OrderStatus::RESERVED->name
+            $order->getPaymentStatus() === OrderStatus::COMPLETED->name
         ) {
             return true;
         }
