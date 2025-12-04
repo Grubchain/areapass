@@ -30,7 +30,7 @@ class CompleteGrubchainOrderHookActionPublic extends BaseAction
             //  if the webhook key is different fail
             $envKey = config('custom.GRUBCHAIN_WEBHOOK_KEY');
             $decodedKey = base64_decode($key);
-            if ($decodedKey !== $envKey) {
+            if ($decodedKey != $envKey) {
                 return $this->errorResponse("Bad Request", Response::HTTP_BAD_REQUEST);
             }
 

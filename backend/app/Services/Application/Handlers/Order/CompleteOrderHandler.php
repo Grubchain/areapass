@@ -175,7 +175,7 @@ class CompleteOrderHandler
         $updatedOrder = DB::transaction(function () use ($orderShortId) {
 
             $order = $this->getGrubchainOrder($orderShortId);
-            if ($order->getStatus() == OrderPaymentStatus::PAYMENT_RECEIVED->name) {
+            if ($order->getPaymentStatus() == OrderPaymentStatus::PAYMENT_RECEIVED->name) {
                 return $order;
             }
 
@@ -211,8 +211,8 @@ class CompleteOrderHandler
     {
         $order = $this->getGrubchainOrder($orderShortId);
         if (
-            $order->getStatus() == OrderPaymentStatus::AWAITING_PAYMENT->name && 
-            $order->getPaymentStatus() === OrderStatus::COMPLETED->name
+            $order->getStatus() == OrderStatus::COMPLETED->name && 
+            $order->getPaymentStatus() == OrderPaymentStatus::AWAITING_PAYMENT->name
         ) {
             return true;
         }
