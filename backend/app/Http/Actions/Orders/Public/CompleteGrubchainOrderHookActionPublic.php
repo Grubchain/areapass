@@ -13,10 +13,14 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Psy\Util\Str;
 use Symfony\Component\HttpFoundation\Response;
+use Psr\Log\LoggerInterface;
 
 class CompleteGrubchainOrderHookActionPublic extends BaseAction
 {
-    public function __construct(private readonly CompleteOrderHandler $orderService) {}
+    public function __construct(
+        private readonly CompleteOrderHandler $orderService,
+        private readonly LoggerInterface $logger
+    ) {}
 
     public function __invoke(string $orderShortId, string $key, string $timestamp): JsonResponse
     {
@@ -31,14 +35,28 @@ class CompleteGrubchainOrderHookActionPublic extends BaseAction
             $envKey = config('custom.GRUBCHAIN_WEBHOOK_KEY');
             $decodedKey = base64_decode($key);
             if ($decodedKey != $envKey) {
+                $this->logger->info("webhook key not same", ['decodedKey' => $decodedKey]);
                 return $this->errorResponse("Bad Request", Response::HTTP_BAD_REQUEST);
             }
 
-            if (!$this->orderService->isOrderOpenAwaiting($orderShortId)){
+            if (!$this->orderService->isOrderOpenAwaiting($orderShortId)) {
+                $this->logger->info(
+                    "isOrderOpenAwaiting",
+                    [
+                        'orderShortId' => $orderShortId,
+                        'isOrderOpenAwaiting' => $this->orderService->isOrderOpenAwaiting($orderShortId),
+                    ]
+                );
                 return $this->errorResponse("Bad Request", Response::HTTP_BAD_REQUEST);
             }
 
             $order = $this->orderService->handleGrubchainWebhook($orderShortId);
+            $this->logger->info(
+                "order",
+                [
+                    'order' => $order
+                ]
+            );
         } catch (ResourceConflictException $e) {
             return $this->errorResponse($e->getMessage(), Response::HTTP_CONFLICT);
         }
