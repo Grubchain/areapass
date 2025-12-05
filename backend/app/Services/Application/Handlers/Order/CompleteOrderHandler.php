@@ -211,7 +211,7 @@ class CompleteOrderHandler
     {
         $order = $this->getGrubchainOrder($orderShortId);
         if (
-            $order->getStatus() == OrderStatus::COMPLETED->name && 
+            $order->getStatus() == OrderStatus::COMPLETED->name &&
             $order->getPaymentStatus() == OrderPaymentStatus::AWAITING_PAYMENT->name
         ) {
             return true;

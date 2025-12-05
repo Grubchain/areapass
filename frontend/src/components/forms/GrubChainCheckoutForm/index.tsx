@@ -1379,7 +1379,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
             {t`Bank Authentication`}
           </h2>
           <p>
-            <a href={authenticateBankUrl} onClick={(e) => { setCheckoutState("waiting") }} target="_blank" style={{ color: "blue", textDecoration: "underline" }}> Click to authenticate with your bank</a>
+            <a href={authenticateBankUrl} onClick={(e) => { setCheckoutState("waiting"); handleWaitingButton(); }} target="_blank" style={{ color: "blue", textDecoration: "underline" }}> Click to authenticate with your bank</a>
           </p>
         </Card>
       </Stack>
