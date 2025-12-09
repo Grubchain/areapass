@@ -74,6 +74,7 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
   const [payerBirthday, setPayerBirthday] = useState(" ");
   const [txReference, setTxReference] = useState(" ");
   const [authenticateBankUrl, setAuthenticateBankUrl] = useState("");
+  const [paystackCheckoutUrl, setPaystackCheckoutUrl] = useState("");
   const [enc, setEnc] = useState({});
 
   const [tosLink, setTosLink] = useState("");
@@ -82,29 +83,45 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   const [isLoading, setIsLoading] = useState(Boolean);
 
-  const allPaymentMethods = ["card", "bank"]; //"transfer", "USSD","kuda", 
+  const allPaymentMethods = getConfig("VITE_AREAPASS_PAYMENT_MODE") == "paystack" ? [] : ["card", "bank"]; //"transfer", "USSD","kuda", 
   const allBanks = banks.data;
-  useEffect(() => {
-    const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
-    setBusinessId(theBID);
-    setTxReference(orderShortId);
-    setCancelPolLink(getConfig('VITE_CANCELATION_URL'));
-    setTosLink(getConfig('VITE_GRUBCHAIN_TOS'));
-    setPrivacyLink(getConfig('VITE_GRUBCHAIN_PRIVACY'));
 
-    orderClientPublic.getGrubchainJwtToken(eventId, orderShortId, "client_secrets")
-      .then((jwtToken) => {
-        return clientSecretsApi({
-          jwt: jwtToken,
-          params: { "business_id": theBID, "expires_in": 600 }
-        });
-      })
-      .then((response) => { setEnc(response) });
+  if (getConfig("VITE_AREAPASS_PAYMENT_MODE") == "paystack") {
+    useEffect(() => {
+      const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
+      setBusinessId(theBID);
+      setTxReference(orderShortId);
+      setCancelPolLink(getConfig('VITE_CANCELATION_URL'));
+      setTosLink(getConfig('VITE_GRUBCHAIN_TOS'));
+      setPrivacyLink(getConfig('VITE_GRUBCHAIN_PRIVACY'));
 
-    if (setSubmitHandler) {
-      setSubmitHandler(() => handleSubmit);
-    }
-  }, [setSubmitHandler, order]);
+      if (setSubmitHandler) {
+        setSubmitHandler(() => handleSubmit);
+      }
+    }, [setSubmitHandler, order]);
+  } else {
+    useEffect(() => {
+      const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
+      setBusinessId(theBID);
+      setTxReference(orderShortId);
+      setCancelPolLink(getConfig('VITE_CANCELATION_URL'));
+      setTosLink(getConfig('VITE_GRUBCHAIN_TOS'));
+      setPrivacyLink(getConfig('VITE_GRUBCHAIN_PRIVACY'));
+
+      orderClientPublic.getGrubchainJwtToken(eventId, orderShortId, "client_secrets")
+        .then((jwtToken) => {
+          return clientSecretsApi({
+            jwt: jwtToken,
+            params: { "business_id": theBID, "expires_in": 600 }
+          });
+        })
+        .then((response) => { setEnc(response) });
+
+      if (setSubmitHandler) {
+        setSubmitHandler(() => handleSubmit);
+      }
+    }, [setSubmitHandler, order]);
+  }
 
   const handleSubmit = async () => {
 
@@ -169,9 +186,14 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
 
   //  handle different payment methods
   const setTheCheckoutState = () => {
-    setIsLoading(true);
-    setCheckoutState(paymentMethod);
-    setIsLoading(false);
+    if (getConfig("VITE_AREAPASS_PAYMENT_MODE") === "paystack") {
+      payCheckout();
+    }
+    else {
+      setIsLoading(true);
+      setCheckoutState(paymentMethod);
+      setIsLoading(false);
+    }
   }
 
   const resetTheCheckoutState = () => {
@@ -182,6 +204,45 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
     setCardNum("")
     setBankAccountCodeErr("Invalid Bank");
     setBankAccountNumErr("Invalid Bank Account");
+  }
+
+  const payCheckout = async () => {
+    setCheckoutState("waiting");
+    try {
+      setIsLoading(true);
+      setPayWithBankAmount(order.total_gross * 100);
+      const theBID = getConfig('VITE_GRUBCHAIN_BUSINESS_ID');
+      setBusinessId(theBID);
+      setIsLoading(true);
+      const body = {
+        "amount": order.total_gross * 100,
+        "email": order.email,
+        "order_id": orderShortId,
+        "event_id": eventId,
+        "business_id": businessId,
+        "agree_to_terms": agreeToTerms,
+        "allow_promotions": allowEmails,
+        "notify_crypto": notifyCryptoAvailable
+      }
+
+      grubchainPostRequestDecorator(
+        "/api/v1/psk/purchase/redirect",
+        body,
+        eventId,
+        orderShortId,
+        orderClientPublic.getGrubchainHeaders
+      ).then(({ data }) => {
+        setPaystackCheckoutUrl(data.authorization_url);
+        setCheckoutState("paystack_checkout")
+      }).catch(error => {
+        throw error;
+      });
+
+    } catch (error) {
+      setIsLoading(false);
+      setCheckoutState("ERROR");
+      console.log(error);
+    }
   }
 
   //  pay APIs
@@ -1368,6 +1429,21 @@ export default function GrubChainCheckoutForm({ setSubmitHandler }: {
           </Group>
         </Stack>
       </form >
+    );
+  }
+
+  if (checkoutState === 'paystack_checkout') {
+    return (
+      <Stack>
+        <Card>
+          <h2>
+            {t`Continue with the link below for payment`}
+          </h2>
+          <p>
+            <a href={paystackCheckoutUrl} onClick={(e) => { setCheckoutState("waiting"); handleWaitingButton(); }} target="_blank" style={{ color: "blue", textDecoration: "underline" }}> Click to here to complete payment</a>
+          </p>
+        </Card>
+      </Stack>
     );
   }
 
